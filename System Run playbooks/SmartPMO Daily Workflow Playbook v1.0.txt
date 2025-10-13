@@ -1,0 +1,367 @@
+# SmartPMO Daily Workflow Playbook v1.0
+**VERSION:** 1.0  
+**DATE:** 2025-10-06  
+**PURPOSE:** Master playbook for daily content operations
+
+---
+
+## Overview
+
+**Database Location:** `D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db`  
+**Working Directory:** `D:\PMO-Brain-2.0-Modular\02-discovery-engine`  
+**Workflow:** 5-step automated daily process
+
+---
+
+## Prerequisites
+
+**Required Software:**
+- PowerShell 5.1+
+- PSSQLite module
+- Node.js (for discovery engine)
+- Claude Desktop (for prompt execution)
+
+**Verify Installation:**
+```powershell
+# Check PSSQLite
+Get-Module -ListAvailable PSSQLite
+
+# If missing, install:
+Install-Module -Name PSSQLite -Scope CurrentUser -Force
+```
+
+---
+
+## Daily Workflow (Mon-Fri)
+
+### **STEP 1: Discovery Run**
+**Time:** 7:00 AM (automated via Task Scheduler)  
+**Duration:** 5-10 minutes  
+**Purpose:** Scrape new PMO+AI articles from RSS feeds
+
+```bash
+cd D:\PMO-Brain-2.0-Modular\02-discovery-engine
+.\run-discovery.bat
+```
+
+**What it does:**
+- Scrapes 50+ RSS feeds
+- Filters for AI+PMO content
+- Stores in daily_insights table
+- Sets published_date and discovered_at
+- Typically finds 100-200 new articles
+
+**Output:**
+- New records in daily_insights
+- All with pmo_score = NULL (awaiting scoring)
+- All with content_fetched = 0 (awaiting fetch)
+
+---
+
+### **STEP 2: Content Scoring**
+**Time:** 7:15 AM (manual)  
+**Duration:** 10-15 minutes  
+**Purpose:** Score all discovered articles for PMO+AI relevance
+
+**File:** `Content Scoring Prompt v1.2.txt`
+
+**Execute in Claude:**
+1. Open Claude Desktop
+2. Use MCP to paste full prompt
+3. Claude processes in batches of 20
+4. Updates pmo_score, pmo_application, scoring_prompt_version
+
+**Process:**
+- Queries unscored articles (pmo_score IS NULL)
+- Batch processes 20 at a time
+- Scores 1-100 based on PMO+AI intersection
+- Uses CASE statement for efficient bulk updates
+- Continues until all articles scored
+
+**Expected Results:**
+- 100-200 articles scored
+- Average score: 15-25
+- 70+ scores: 10-20 articles
+- 85+ scores: 2-5 articles
+
+**Verification:**
+```sql
+SELECT COUNT(*) as total_scored,
+       AVG(pmo_score) as avg_score,
+       SUM(CASE WHEN pmo_score >= 70 THEN 1 ELSE 0 END) as high_score
+FROM daily_insights 
+WHERE published_date = DATE('now')
+```
+
+---
+
+### **STEP 3: Article Content Fetch**
+**Time:** 7:30 AM (manual)  
+**Duration:** 15-20 minutes  
+**Purpose:** Fetch full content for top 10 articles
+
+**Files:**
+- `fetch-prompt-builder.ps1` (generates prompt)
+- `Article Content Fetch Prompt v1.0.txt` (reference template)
+
+**Execute:**
+
+```powershell
+cd D:\PMO-Brain-2.0-Modular\02-discovery-engine
+.\fetch-prompt-builder.ps1
+```
+
+**What it does:**
+1. Queries top 12 unfetched articles (pmo_score >= 70)
+2. Checks current fetch count (target: 10/day)
+3. Generates custom Claude prompt with URLs
+4. Copies prompt to clipboard
+5. Shows article queue
+
+**In Claude:**
+1. Paste prompt from clipboard (Ctrl+V)
+2. Claude uses web_fetch on each URL
+3. Phase 1: Direct fetch
+4. Phase 2: Search & fetch fallback if needed
+5. Stores full_content (800-1200 words or complete article)
+6. Updates content_fetched, fetch_status, content_length
+7. Stops at 10 successful fetches
+
+**Expected Results:**
+- 10 articles with full_content populated
+- content_fetched = 1
+- fetch_status = 'success'
+- content_length = 3000-8000 characters
+- 0-2 failed fetches (paywalls, 404s)
+
+**Verification:**
+```sql
+SELECT COUNT(*) as fetched_today,
+       AVG(content_length) as avg_length
+FROM daily_insights 
+WHERE published_date = DATE('now') 
+  AND fetch_status = 'success'
+```
+
+---
+
+### **STEP 4: Keyword Extraction**
+**Time:** 7:50 AM (manual)  
+**Duration:** 5-10 minutes  
+**Purpose:** Extract 5-7 keywords from each fetched article
+
+**File:** `Keyword Extraction Prompt v1.1.txt`
+
+**Execute in Claude:**
+1. Paste full prompt
+2. Claude queries articles with content_fetched = 1 AND keywords_extracted = 0
+3. Extracts 5-7 high-value keywords per article
+4. Categorizes: tool, concept, practice, technical
+5. Scores relevance 1-10 (only saves 7+)
+6. Inserts into article_keywords table
+7. Updates keywords_extracted = 1, keyword_count
+
+**Process:**
+- Reads full_content field
+- Identifies specific tools, concepts, practices
+- Avoids generic terms
+- Uses INSERT OR IGNORE for deduplication
+- Processes all articles in single run
+
+**Expected Results:**
+- 10 articles processed
+- 50-70 total keywords extracted
+- Avg 5-7 keywords per article
+- All with relevance score 7+
+
+**Verification:**
+```sql
+SELECT di.id, di.title, di.keyword_count,
+       GROUP_CONCAT(ak.keyword, ', ') as keywords
+FROM daily_insights di
+LEFT JOIN article_keywords ak ON di.id = ak.article_id
+WHERE di.published_date = DATE('now') 
+  AND di.keywords_extracted = 1
+GROUP BY di.id
+```
+
+---
+
+### **STEP 5: Newsletter Generation**
+**Time:** 8:00 AM (manual)  
+**Duration:** 20-30 minutes  
+**Purpose:** Generate newsletter-ready content cards
+
+**File:** `Newsletter Generation Prompt v2.1.txt`
+
+**Execute in Claude:**
+1. Paste full prompt
+2. Claude queries articles with:
+   - content_fetched = 1
+   - newsletter_created = 0
+   - pmo_score >= 50
+3. Generates 7 sections per article:
+   - Headline (5-8 words)
+   - Tagline (12 words max)
+   - TLDR (4 bullets)
+   - Why It Matters (100-150 words)
+   - What You Get (100-150 words)
+   - Quick Win (80-100 words)
+   - PMO Application (100-150 words with tier)
+4. Outputs summary table + full content blocks
+
+**Process:**
+- Uses existing full_content (no web_fetch)
+- Includes keywords from article_keywords
+- Determines tier based on pmo_score
+- Outputs in copy-paste ready format
+
+**Expected Results:**
+- 10 newsletter cards generated
+- Total ~6000-8000 words
+- Ready for manual database insertion
+
+**Manual Database Updates:**
+For each article, run:
+
+```sql
+-- Insert newsletter content
+INSERT INTO newsletter_content (
+    article_id, 
+    newsletter_date, 
+    tagline, 
+    tldr
+) VALUES (
+    [id], 
+    DATE('now'), 
+    '[tagline]', 
+    '[tldr_with_bullets]'
+);
+
+-- Update article status
+UPDATE daily_insights 
+SET newsletter_created = 1, 
+    newsletter_word_count = [total_words]
+WHERE id = [article_id];
+```
+
+**Verification:**
+```sql
+SELECT COUNT(*) as newsletter_ready
+FROM daily_insights 
+WHERE published_date = DATE('now') 
+  AND newsletter_created = 1
+```
+
+---
+
+## Workflow Tracking
+
+**Monitor Daily Progress:**
+```sql
+SELECT 
+    published_date,
+    COUNT(*) as total_articles,
+    SUM(CASE WHEN pmo_score IS NOT NULL THEN 1 ELSE 0 END) as scored,
+    SUM(CASE WHEN content_fetched = 1 THEN 1 ELSE 0 END) as fetched,
+    SUM(CASE WHEN keywords_extracted = 1 THEN 1 ELSE 0 END) as keywords,
+    SUM(CASE WHEN newsletter_created = 1 THEN 1 ELSE 0 END) as newsletter
+FROM daily_insights
+WHERE published_date >= DATE('now', '-7 days')
+GROUP BY published_date
+ORDER BY published_date DESC
+```
+
+**Daily Run Tracker API:**
+```
+http://localhost:8080/api/daily-run
+```
+
+Shows complete 5-step workflow status with timestamps.
+
+---
+
+## Troubleshooting
+
+### Discovery finds no articles
+- Check RSS feed URLs in config
+- Verify network connectivity
+- Review discovery log file
+
+### Scoring crashes/times out
+- Reduce batch size from 20 to 10
+- Check for corrupt content_summary data
+- Verify MCP connection to database
+
+### Fetch fails for all articles
+- Check web_fetch rate limits
+- Verify URLs are accessible
+- Review fetch_error field for patterns
+
+### Keywords extracted but count = 0
+- Check article_keywords table directly
+- Verify INSERT OR IGNORE syntax
+- Look for constraint violations
+
+### Newsletter generation too slow
+- Reduce article limit from 10 to 5
+- Process in two batches
+- Skip articles with pmo_score < 70
+
+---
+
+## File Reference
+
+**Prompt Files (stored in project docs):**
+1. `Content Scoring Prompt v1.2.txt`
+2. `Article Content Fetch Prompt v1.0.txt`
+3. `Keyword Extraction Prompt v1.1.txt`
+4. `Newsletter Generation Prompt v2.1.txt`
+5. `SmartPMO Daily Workflow Playbook v1.0.txt` (this file)
+
+**Script Files:**
+- `fetch-prompt-builder.ps1` - Generates fetch prompt with URLs
+- `run-discovery.bat` - Runs discovery engine
+
+**Database Files:**
+- `pmo_insights.db` - Main production database
+- `pmo_insights_backup.db` - Daily backup (optional)
+
+---
+
+## Version History
+
+**v1.0 (2025-10-06):**
+- Initial playbook creation
+- Updated all prompts to use published_date field
+- Fixed discovery date bug
+- Added Daily Run Tracker integration
+- Optimized workflow for token efficiency
+
+---
+
+## Next Steps / Roadmap
+
+**Automation Priorities:**
+1. GitHub Actions for daily workflow
+2. Automated newsletter card generation (skip manual SQL)
+3. Website auto-deployment after newsletter creation
+4. Email newsletter distribution
+5. Analytics dashboard for content performance
+
+**Database Improvements:**
+1. Add version control for prompt versions
+2. Backup automation
+3. Performance optimization for large datasets
+4. Archive old articles (>90 days)
+
+---
+
+## Support
+
+**Database Location:** D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db  
+**Management Console:** http://localhost:8080/console  
+**Daily Run Tracker:** http://localhost:8080/api/daily-run  
+**Project Location:** South Africa (SAST - UTC+2)
+
+For issues, check chat history or backlog in database.

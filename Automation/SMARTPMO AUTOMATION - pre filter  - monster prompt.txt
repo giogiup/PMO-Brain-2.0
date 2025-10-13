@@ -1,0 +1,501 @@
+# 🎯 SMARTPMO AUTOMATION - PRE-FILTER SYSTEM BUILD
+**Restart Prompt for New Chat Session**
+
+
+NB - need to separate the GEMINI prompts out of the code - in console and db so that prompts can be updated without code changes!
+---
+
+## 📋 PROJECT CONTEXT
+
+**Project:** SmartPMO.ai Daily Automation Pipeline  
+**Location:** `D:\PMO-Brain-2.0-Modular\Automation\`  
+**Database:** `D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db`  
+**User:** PowerShell user, step-by-step guidance preferred
+
+---
+
+## ✅ WHAT'S WORKING (Completed Components)
+
+### **Pipeline Steps 1-3 (Fully Working):**
+1. **Discovery Engine** ✅ - DiscoveryEngine.js
+   - Discovers articles from 179 RSS sources
+   - Stores in `daily_insights` table (title, url, published_date, source_id)
+   - Typical yield: 800-900 articles/day
+   - UNIQUE constraint on URL prevents duplicates
+   - Multiple runs per day supported (no UNIQUE constraint on run_date)
+
+2. **Scoring Engine** ⚠️ - ScoringEngine.js (exists but has bug)
+   - Uses Gemini 2.0 Flash API
+   - Bug: Missing `config` parameter in constructor call
+   - Tries to score ALL discovered articles → too many, too expensive
+
+3. **Content Fetcher** ✅ - ContentFetcher.js
+   - Uses Jina AI to fetch full article content
+   - Works on top 20 scored articles
+
+### **Pipeline Steps 4-6 (Recently Built, Untested):**
+4. **Content Enricher** ✅ - ContentEnricher.js (NEW, replaces KeywordExtractor)
+   - ONE Gemini call generates: tagline, TLDR (4 bullets), badges (5 types), keywords (5-8)
+   - Saves to `newsletter_content` table and `article_keywords` table
+   - Marks articles with `keywords_extracted=1`, `newsletter_created=1`
+
+5. **Card Generator** ✅ - CardGenerator.js (UPDATED)
+   - Pulls enriched data from database
+   - No AI calls (enrichment already done)
+   - Applies smart 10-20 logic
+   - Exports to `../website/api/daily-cards.json`
+
+6. **Git Deploy** ✅ - In run-daily-pipeline.js
+   - Commits and pushes daily-cards.json
+   - Triggers Cloudflare Pages auto-deploy
+
+### **Core Files:**
+- ✅ `run-daily-pipeline.js` - Orchestrates all 6 steps
+- ✅ `DatabaseManager.js` - All DB operations
+- ✅ `package.json` - 174 packages installed
+- ✅ `.env` - GEMINI_API_KEY, JINA_API_KEY configured
+
+### **Database Optimizations Completed:**
+- ✅ UNIQUE constraint on `daily_insights.url` (prevents duplicate articles)
+- ✅ Removed UNIQUE constraint on `discovery_run_master.run_date` (allows multiple runs/day)
+- ✅ Fixed `logOperation` to handle 'discovery', 'pipeline-failed', 'pipeline-complete'
+- ✅ Fixed `insertArticle` to use correct column names (no source_tier, no discovery_run_id)
+- ✅ Created `createRun()` method in DatabaseManager
+
+---
+
+## ❌ CRITICAL PROBLEM IDENTIFIED
+
+**Issue:** Missing pre-filter step between Discovery and Scoring
+
+**Original Plan (from previous chats):**
+1. Discovery → 300+ articles
+2. **Local Pre-Filter** → Narrow to ~100 most promising ❌ **MISSING!**
+3. AI Scoring → Score the filtered articles
+4. Content Fetch → Top 20
+5. Enrichment → Metadata
+6. Cards → Export
+7. Deploy → Git
+
+**Current Broken Flow:**
+1. Discovery → 839 articles
+2. ~~Pre-filter~~ SKIPPED
+3. Scoring tries to process ALL 839 → Fails/expensive/slow
+
+**Last Run Error:**
+```
+Found 839 articles to score
+❌ PIPELINE FAILED: Cannot read properties of undefined (reading 'scoring_batch_size')
+```
+
+---
+
+## 🎯 SOLUTION: SOPHISTICATED PRE-FILTER SYSTEM
+
+### **Design Requirements:**
+- **Fast keyword-based filtering** (not AI, just pattern matching)
+- **Search fields:** Title + URL only (content_summary is NULL until fetch step)
+- **Configurable via Console** (no code changes needed)
+- **Inclusive philosophy:** Let borderline cases through, AI will judge later
+- **Score-based logic:** No hard excludes, everything based on point system
+- **Audit trail:** Log all decisions for troubleshooting
+- **Gemini bias prevention:** Pre-filter score NEVER shown to Gemini
+
+### **4-Tier Keyword Weighting System:**
+
+**Tier 1: GOLD** (Auto-pass if found)
+- Examples: "PMO", "project portfolio", "program management office"
+- Weight: 100 points
+- ~30-50 keywords/phrases
+
+**Tier 2: SILVER** (Strong signal)
+- Examples: "Asana AI", "Jira automation", "Claude API", "GPT integration"
+- Weight: 50 points
+- ~80-100 keywords/phrases
+
+**Tier 3: BRONZE** (Medium signal)
+- Examples: "project management", "resource planning", "automation", "workflow"
+- Weight: 20 points
+- ~150-200 keywords/phrases
+
+**Tier 4: TIN** (Weak signal)
+- Examples: "AI", "artificial intelligence", "cloud", "SaaS", "digital"
+- Weight: 5 points
+- ~150-200 keywords/phrases
+
+**Total Include Keywords:** ~500 (single words + 2-word phrases)
+
+### **Soft Exclude System:**
+
+**SOFT EXCLUDES** (reduce score, can be overridden)
+- Examples: "funding round", "raises $X", "Series A/B/C", "acquisition", "merger"
+- Penalty: Requires score >= 120 to pass (vs normal 100 threshold)
+- ~100 keywords/phrases
+
+**NO HARD EXCLUDES** - Everything is score-based
+
+### **Bonus Modifiers:**
+
+**Phrase Bonus:** +25 points
+- When keyword appears as exact phrase vs. separate words
+- Example: "project management" as phrase > "project" + "management" separate
+
+**Source Bonus:** +50 points
+- If from premium sources: Harvard Business Review, McKinsey, Gartner, PMI.org, etc.
+- User can edit list via console
+
+**Company Bonus:** +30 points
+- If mentions key companies: Anthropic, OpenAI, Google AI, Microsoft, etc.
+- User can edit list via console
+
+### **Pass Logic:**
+```javascript
+Score = (Tier matches × weights) + Bonuses
+
+Pass if:
+  - Score >= pass_threshold (default: 100)
+  - If soft excludes present: Score >= soft_exclude_override (default: 120)
+
+Sort passed articles by score (descending)
+Take top min(max_articles_to_pass, passed_count)
+  - If max=100 and 250 passed → send top 100
+  - If max=100 and 87 passed → send all 87
+```
+
+---
+
+## 🗄️ DATABASE CHANGES NEEDED
+
+### **1. New Table: prefilter_keywords**
+```sql
+CREATE TABLE prefilter_keywords (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  keyword TEXT NOT NULL,
+  keyword_type TEXT NOT NULL CHECK(keyword_type IN ('include', 'exclude')),
+  tier TEXT CHECK(tier IN ('gold', 'silver', 'bronze', 'tin', NULL)),
+  category TEXT,
+  weight INTEGER,
+  case_sensitive BOOLEAN DEFAULT 0,
+  enabled BOOLEAN DEFAULT 1,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_prefilter_keywords_type ON prefilter_keywords(keyword_type, enabled);
+CREATE INDEX idx_prefilter_keywords_tier ON prefilter_keywords(tier, enabled);
+```
+
+### **2. New Table: prefilter_config**
+```sql
+CREATE TABLE prefilter_config (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  config_key TEXT UNIQUE NOT NULL,
+  config_value TEXT NOT NULL,
+  description TEXT,
+  config_type TEXT DEFAULT 'string',
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Initial config values to insert:
+INSERT INTO prefilter_config (config_key, config_value, description, config_type) VALUES
+  ('tier_gold_weight', '100', 'Points for GOLD tier keyword matches', 'integer'),
+  ('tier_silver_weight', '50', 'Points for SILVER tier keyword matches', 'integer'),
+  ('tier_bronze_weight', '20', 'Points for BRONZE tier keyword matches', 'integer'),
+  ('tier_tin_weight', '5', 'Points for TIN tier keyword matches', 'integer'),
+  ('pass_threshold', '100', 'Minimum score required to pass pre-filter', 'integer'),
+  ('soft_exclude_override', '120', 'Score needed to override soft excludes', 'integer'),
+  ('phrase_bonus', '25', 'Bonus points for exact phrase matches', 'integer'),
+  ('source_bonus', '50', 'Bonus points for premium sources', 'integer'),
+  ('company_bonus', '30', 'Bonus points for key company mentions', 'integer'),
+  ('max_articles_to_pass', '100', 'Maximum articles to pass to Gemini scoring', 'integer'),
+  ('enable_phrase_bonus', 'true', 'Enable phrase matching bonus', 'boolean'),
+  ('enable_source_bonus', 'true', 'Enable source quality bonus', 'boolean'),
+  ('enable_company_bonus', 'true', 'Enable company mention bonus', 'boolean'),
+  ('enable_prefilter', 'true', 'Master switch for pre-filter', 'boolean'),
+  ('search_fields', 'title,url', 'Fields to search (comma-separated)', 'string');
+```
+
+### **3. New Table: prefilter_log**
+```sql
+CREATE TABLE prefilter_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  article_id INTEGER NOT NULL,
+  run_date DATE NOT NULL,
+  passed BOOLEAN NOT NULL,
+  score INTEGER NOT NULL,
+  include_matches TEXT,
+  exclude_matches TEXT,
+  match_count INTEGER,
+  decision_reason TEXT,
+  processed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(article_id) REFERENCES daily_insights(id)
+);
+
+CREATE INDEX idx_prefilter_log_date ON prefilter_log(run_date, passed);
+CREATE INDEX idx_prefilter_log_article ON prefilter_log(article_id);
+```
+
+### **4. Add Column to daily_insights:**
+```sql
+ALTER TABLE daily_insights ADD COLUMN prefilter_passed BOOLEAN DEFAULT 0;
+ALTER TABLE daily_insights ADD COLUMN prefilter_score INTEGER DEFAULT NULL;
+
+CREATE INDEX idx_daily_insights_prefilter ON daily_insights(prefilter_passed, published_date);
+```
+
+### **5. New Tables for Bonus Lists:**
+```sql
+CREATE TABLE prefilter_bonus_sources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_name TEXT NOT NULL UNIQUE,
+  source_pattern TEXT NOT NULL,
+  bonus_points INTEGER DEFAULT 50,
+  enabled BOOLEAN DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE prefilter_bonus_companies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_name TEXT NOT NULL UNIQUE,
+  company_pattern TEXT NOT NULL,
+  bonus_points INTEGER DEFAULT 30,
+  enabled BOOLEAN DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 📦 NEW MODULE TO BUILD
+
+### **File:** `modules/PreFilter.js`
+
+**Purpose:** Keyword-based filtering between Discovery and Scoring
+
+**Key Methods:**
+```javascript
+class PreFilter {
+  constructor(db) {}
+  
+  async run(runDate) {
+    // 1. Load config from prefilter_config table
+    // 2. Load keywords from prefilter_keywords table
+    // 3. Load bonus lists
+    // 4. Get all unscored articles for runDate
+    // 5. Score each article based on keyword matches
+    // 6. Apply bonuses
+    // 7. Sort by score, take top N
+    // 8. Mark selected articles: prefilter_passed=1, prefilter_score=X
+    // 9. Log all decisions to prefilter_log
+    // 10. Return stats
+  }
+  
+  async scoreArticle(article, config, keywords) {
+    // Calculate score based on tier weights
+    // Check for phrase matches (bonus)
+    // Check for soft excludes
+    // Return: { score, includeMatches, excludeMatches, reason }
+  }
+  
+  async applyBonuses(article, score, config) {
+    // Check source bonus
+    // Check company bonus
+    // Return adjusted score
+  }
+  
+  async logDecision(articleId, runDate, passed, scoreData) {
+    // Save to prefilter_log
+  }
+}
+```
+
+---
+
+## 🔧 PIPELINE INTEGRATION
+
+### **Update run-daily-pipeline.js:**
+
+**Add after Discovery, before Scoring:**
+```javascript
+// ====================================================================
+// STEP 1.5: PRE-FILTER (Keyword-based selection)
+// ====================================================================
+if (CONFIG.steps.prefilter) {
+    console.log('═'.repeat(60));
+    console.log('STEP 1.5/7: PRE-FILTER (Keyword-based)');
+    console.log('═'.repeat(60));
+    
+    const prefilter = new PreFilter(db);
+    results.prefilter = await prefilter.run(runDate);
+    
+    console.log(`\n✅ Pre-filter complete: ${results.prefilter.passed}/${results.prefilter.total} articles passed\n`);
+    
+    if (results.prefilter.passed === 0) {
+        console.log('⚠️  No articles passed pre-filter. Stopping pipeline.');
+        return results;
+    }
+}
+```
+
+**Update Scoring step to only score pre-filtered articles:**
+```javascript
+// Change ScoringEngine query from:
+// WHERE published_date = ? AND pmo_score IS NULL
+
+// To:
+// WHERE published_date = ? AND prefilter_passed = 1 AND pmo_score IS NULL
+```
+
+**Add step control:**
+```javascript
+steps: {
+    discovery: !process.argv.includes('--skip-discovery'),
+    prefilter: !process.argv.includes('--skip-prefilter'),
+    scoring: !process.argv.includes('--skip-scoring'),
+    // ... rest
+}
+```
+
+---
+
+## 🖥️ CONSOLE TAB (Future - Don't Build Yet)
+
+**New Tab:** "Pre-Filter Manager" in Management Console
+
+**4 Sections:**
+1. **Configuration Panel** - Edit all config values with live preview
+2. **Keyword Manager** - Add/edit/delete keywords, manage tiers
+3. **Test Mode** - Test filter on sample data before committing
+4. **Logs & Statistics** - View filter decisions, pass rates, common matches
+
+**Location:** `D:\PMO-Brain-2.0-Modular\01-Management-Console\public\console.html`
+
+---
+
+## 🌱 SEED DATA NEEDED
+
+**Initial Keywords to Populate (500 includes, 100 excludes):**
+
+Need CSV or SQL with:
+- GOLD tier (~50): Core PMO terms
+- SILVER tier (~100): Business tools + AI integrations
+- BRONZE tier (~200): Project management terms
+- TIN tier (~150): Generic AI/business terms
+- SOFT EXCLUDES (~100): Funding, entertainment, non-business terms
+
+---
+
+## 🏗️ BUILD ORDER
+
+### **Phase 1: Database Setup**
+1. Create 5 new tables (prefilter_keywords, prefilter_config, prefilter_log, prefilter_bonus_sources, prefilter_bonus_companies)
+2. Add columns to daily_insights (prefilter_passed, prefilter_score)
+3. Insert initial config values
+4. Populate seed keywords (500 include, 100 exclude)
+
+### **Phase 2: PreFilter Module**
+1. Create `modules/PreFilter.js`
+2. Implement scoring logic
+3. Implement bonus logic
+4. Implement logging
+5. Test standalone
+
+### **Phase 3: Pipeline Integration**
+1. Update `run-daily-pipeline.js` to add Step 1.5
+2. Update ScoringEngine query to filter on prefilter_passed=1
+3. Fix ScoringEngine constructor bug (add config parameter)
+4. Test full pipeline
+
+### **Phase 4: Console Tab (Later)**
+1. Build UI in console.html
+2. Add API endpoints in server.js
+3. Test configuration changes
+
+---
+
+## 🐛 KNOWN BUGS TO FIX
+
+### **1. ScoringEngine Constructor Bug**
+**File:** `modules/ScoringEngine.js`
+**Error:** `Cannot read properties of undefined (reading 'scoring_batch_size')`
+**Fix:** Update constructor call in run-daily-pipeline.js:
+```javascript
+// Change from:
+const scorer = new ScoringEngine(db);
+
+// To:
+const scorer = new ScoringEngine(db, CONFIG);
+
+// And ensure ScoringEngine.js has default config:
+constructor(db, config = {}) {
+  this.db = db;
+  this.config = {
+    scoring_batch_size: config.scoring_batch_size || 10,
+    ...config
+  };
+}
+```
+
+---
+
+## 📊 EXPECTED FLOW AFTER BUILD
+
+```
+Discovery → 839 articles
+  ↓
+PreFilter (Step 1.5) → Scores all 839, passes top 100
+  ↓
+Scoring (Step 2) → Gemini scores 100 articles (not 839!)
+  ↓
+Content Fetch (Step 3) → Top 20 scored articles
+  ↓
+Enrichment (Step 4) → Generate metadata for top 20
+  ↓
+Cards (Step 5) → Export 10-20 cards
+  ↓
+Deploy (Step 6) → Push to GitHub
+```
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+- ✅ Pre-filter reduces 800+ articles to ~100 in <5 seconds
+- ✅ Scoring processes 100 articles instead of 800+ (80% cost reduction)
+- ✅ All configuration changeable via database (no code edits)
+- ✅ Full audit trail in prefilter_log
+- ✅ Gemini receives clean data (no bias from pre-filter score)
+- ✅ Pipeline completes in <30 minutes (vs potential hours)
+
+---
+
+## 💾 FILES TO REFERENCE
+
+**Existing Files (Already Built):**
+- `D:\PMO-Brain-2.0-Modular\Automation\modules\DiscoveryEngine.js`
+- `D:\PMO-Brain-2.0-Modular\Automation\modules\ScoringEngine.js`
+- `D:\PMO-Brain-2.0-Modular\Automation\modules\ContentFetcher.js`
+- `D:\PMO-Brain-2.0-Modular\Automation\modules\ContentEnricher.js`
+- `D:\PMO-Brain-2.0-Modular\Automation\modules\CardGenerator.js`
+- `D:\PMO-Brain-2.0-Modular\Automation\modules\DatabaseManager.js`
+- `D:\PMO-Brain-2.0-Modular\Automation\run-daily-pipeline.js`
+
+**Database:**
+- `D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db`
+
+---
+
+## 🚀 NEXT IMMEDIATE STEPS
+
+**When resuming, start with:**
+1. Show user the database schema creation SQL
+2. Generate seed keyword data (500 includes, 100 excludes)
+3. Build PreFilter.js module
+4. Update run-daily-pipeline.js
+5. Fix ScoringEngine bug
+6. Test complete pipeline
+
+---
+
+**This restart prompt contains everything needed to continue building the Pre-Filter system without missing any context or design decisions.**

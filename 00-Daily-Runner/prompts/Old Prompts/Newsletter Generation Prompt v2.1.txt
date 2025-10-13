@@ -1,0 +1,51 @@
+**VERSION: 2.1**
+
+***** Run's after scoring Prompt*****
+
+Generate newsletter cards for today's top 10 AI+PMO articles.
+
+BADGE STANDARDS (exact values only):
+PMO Area: Risk|Scope|Schedule|Cost|Quality|Resource|Stakeholder|Integration|Procurement
+Implementation: Quick Win|Weeks to Deploy|Long to Deploy
+Skill Level: Beginner|Intermediate|Advanced|Expert
+Price: Free|Freemium|Paid|Enterprise
+
+STEP 1: Query top 10
+SELECT id, title, url, pmo_score, full_content 
+FROM daily_insights 
+WHERE date = DATE('now') AND content_fetched = 1 AND pmo_score >= 70
+ORDER BY pmo_score DESC LIMIT 10
+
+STEP 2: Generate for each article
+1. Tagline: 12 words max, benefit hook
+2. TLDR: 4 bullets, 25-35 words each (PMO pain point, AI features, quick action, specific use cases)
+3. Badges (analyze content, match standards):
+   - pmo_area: primary PMBOK area
+   - implementation_speed: setup timeline
+   - skill_level: technical complexity
+   - price_info: Free|Freemium|Paid|Enterprise
+   - read_time: word_count/200 rounded
+4. Keywords: Extract 5-8 relevant terms from content
+
+Price mapping: "free/open"→Free, "free tier+paid"→Freemium, "$X/subscription"→Paid, "contact sales"→Enterprise
+
+STEP 3: Save (check first to prevent duplicates)
+Check: SELECT article_id FROM newsletter_content WHERE article_id = ?
+
+If exists UPDATE:
+UPDATE newsletter_content SET tagline=?, tldr=?, pmo_area=?, implementation_speed=?, skill_level=?, read_time=?, price_info=?, generation_prompt_version='2.1', updated_at=CURRENT_TIMESTAMP WHERE article_id=?
+
+If not INSERT:
+INSERT INTO newsletter_content (article_id, newsletter_date, tagline, tldr, pmo_area, implementation_speed, skill_level, read_time, price_info, generation_prompt_version, created_at) VALUES (?, DATE('now'), ?, ?, ?, ?, ?, ?, ?, '2.1', CURRENT_TIMESTAMP)
+
+Mark done: UPDATE daily_insights SET newsletter_created=1 WHERE id=?
+
+Save keywords to article_keywords table (delete old, insert new):
+DELETE FROM article_keywords WHERE article_id=?
+INSERT INTO article_keywords (article_id, keyword) VALUES (?, ?)
+
+STEP 4: Progress
+Per card: Card X/10 (ID:X UPDATED|INSERTED)
+Final: 10 cards complete (X new, Y updated)
+
+Process one at a time.

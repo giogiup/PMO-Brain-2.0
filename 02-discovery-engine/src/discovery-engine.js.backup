@@ -1,0 +1,788 @@
+// PMO Brain 2.0 - Enhanced Discovery Engine
+// File: 02-discovery-engine/src/discovery-engine.js
+
+const axios = require('axios');
+const Parser = require('rss-parser');
+const cheerio = require('cheerio');
+const fs = require('fs').promises;
+const fsSync = require('fs');
+const path = require('path');
+
+class PMOBrainEnhancedDiscoveryEngine {
+    constructor(config = {}) {
+        this.config = config;
+        this.parser = new Parser({
+            customFields: {
+                feed: ['lastBuildDate', 'language'],
+                item: ['pubDate', 'author', 'category']
+            }
+        });
+        this.sources = [];
+        this.isRunning = false;
+        this.startTime = Date.now();
+        this.stats = {
+            totalSources: 0,
+            activeSources: 0,
+            articlesDiscovered: 0,
+            lastRunTime: null,
+            frontierSources: 0,
+            businessSources: 0,
+            pmoSources: 0
+        };
+        this.maxDailyArticles = 25;
+        this.minDailyArticles = 3;
+        
+        // Add lock mechanism
+        this.lockFile = path.join(__dirname, '../discovery.lock');
+        this.lockTimeout = 10 * 60 * 1000; // 10 minutes
+    }
+
+    async initialize() {
+        console.log('Initializing Enhanced PMO Brain Discovery Engine...');
+        
+        await this.loadEnhancedSources();
+        await this.validateSources();
+        this.setupDailyPolling();
+        
+        console.log(`Discovery Engine initialized with ${this.sources.length} sources`);
+        console.log(`Frontier Sources: ${this.stats.frontierSources}`);
+        console.log(`Business Sources: ${this.stats.businessSources}`);
+        console.log(`PMO Sources: ${this.stats.pmoSources}`);
+    }
+
+    // Add lock management methods
+    async acquireLock() {
+        try {
+            // Check if lock file exists and is recent
+            const stats = await fs.stat(this.lockFile);
+            const lockAge = Date.now() - stats.mtime.getTime();
+            
+            if (lockAge < this.lockTimeout) {
+                return false; // Recent lock exists, another process is running
+            }
+            
+            // Lock is stale, remove it
+            await fs.unlink(this.lockFile);
+        } catch (err) {
+            // No lock file exists, proceed
+        }
+        
+        // Create new lock
+        await fs.writeFile(this.lockFile, Date.now().toString());
+        return true;
+    }
+
+    async releaseLock() {
+        try {
+            await fs.unlink(this.lockFile);
+        } catch (err) {
+            // Lock file might not exist, ignore
+        }
+    }
+
+    async loadEnhancedSources() {
+        this.sources = [
+            // Layer 1: AI Frontier Sources (Where breakthroughs happen)
+            {
+                id: 'github-trending-ai',
+                name: 'GitHub Trending AI',
+                url: 'https://github.com/trending',
+                rssUrl: null,
+                tier: 'frontier',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'AI Development',
+                focusAreas: ['Emerging AI Tools', 'Open Source', 'Developer Innovation'],
+                discoveryMethod: 'api',
+                isActive: true
+            },
+            {
+                id: 'producthunt-ai',
+                name: 'Product Hunt AI',
+                url: 'https://www.producthunt.com/topics/artificial-intelligence',
+                rssUrl: null,
+                tier: 'frontier',
+                authority: 'Medium',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'AI Products',
+                focusAreas: ['New AI Tools', 'Productivity', 'Automation'],
+                discoveryMethod: 'scraping',
+                isActive: true
+            },
+            {
+                id: 'hackernews',
+                name: 'Hacker News',
+                url: 'https://news.ycombinator.com/newest',
+                rssUrl: 'https://hnrss.org/frontpage',
+                tier: 'frontier',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'Tech Discussion',
+                focusAreas: ['AI Startups', 'Tech Trends', 'Developer Tools'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'arxiv-ai',
+                name: 'ArXiv AI Papers',
+                url: 'https://arxiv.org/list/cs.AI/recent',
+                rssUrl: 'http://arxiv.org/rss/cs.AI',
+                tier: 'frontier',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'Research',
+                focusAreas: ['AI Research', 'Academic Papers', 'Implementation'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'papers-with-code',
+                name: 'Papers With Code',
+                url: 'https://paperswithcode.com/latest',
+                rssUrl: null,
+                tier: 'frontier',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'Applied Research',
+                focusAreas: ['Practical AI', 'Implementation', 'Benchmarks'],
+                discoveryMethod: 'scraping',
+                isActive: true
+            },
+            
+            // Layer 2: Business AI Application Sources
+            {
+                id: 'a16z-ai',
+                name: 'Andreessen Horowitz AI',
+                url: 'https://a16z.com/tag/artificial-intelligence/',
+                rssUrl: 'https://a16z.com/feed/',
+                tier: 'business',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'VC Insights',
+                focusAreas: ['AI Investments', 'Business Models', 'Enterprise AI'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'mckinsey-quantumblack',
+                name: 'McKinsey QuantumBlack',
+                url: 'https://www.mckinsey.com/capabilities/quantumblack/our-insights',
+                rssUrl: null,
+                tier: 'business',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'AI Strategy',
+                focusAreas: ['Enterprise AI', 'AI Operations', 'Business Transformation'],
+                discoveryMethod: 'scraping',
+                isActive: true
+            },
+            {
+                id: 'venturebeat-ai',
+                name: 'VentureBeat AI',
+                url: 'https://venturebeat.com/ai/',
+                rssUrl: 'https://venturebeat.com/category/ai/feed/',
+                tier: 'business',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'AI Business News',
+                focusAreas: ['Enterprise AI', 'AI Tools', 'Business Applications'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'techcrunch-ai',
+                name: 'TechCrunch AI',
+                url: 'https://techcrunch.com/category/artificial-intelligence/',
+                rssUrl: 'https://techcrunch.com/category/artificial-intelligence/feed/',
+                tier: 'business',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'AI Startups',
+                focusAreas: ['AI Funding', 'Startup News', 'Product Launches'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'hbr-ai',
+                name: 'Harvard Business Review AI',
+                url: 'https://hbr.org/topic/subject/artificial-intelligence',
+                rssUrl: 'https://feeds.hbr.org/harvardbusiness',
+                tier: 'business',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'Management Strategy',
+                focusAreas: ['AI Leadership', 'Strategic AI', 'Management Innovation'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            
+            // Layer 3: PMO-Specific Sources (Targeted quality)
+            {
+                id: 'pmi-blog',
+                name: 'PMI Blog',
+                url: 'https://www.pmi.org/learning/ai-in-project-management',
+                rssUrl: 'https://www.pmi.org/blog/feed',
+                tier: 'pmo',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'PMO Authority',
+                focusAreas: ['PMO Standards', 'AI in PM', 'Certification'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'hotpmo',
+                name: 'HotPMO',
+                url: 'https://www.hotpmo.com/',
+                rssUrl: 'https://www.hotpmo.com/feed/',
+                tier: 'pmo',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'PMO Community',
+                focusAreas: ['PMO Transformation', 'Case Studies', 'Best Practices'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'digital-project-manager',
+                name: 'The Digital Project Manager',
+                url: 'https://thedigitalprojectmanager.com/',
+                rssUrl: 'https://thedigitalprojectmanager.com/feed/',
+                tier: 'pmo',
+                authority: 'High',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'Digital PM',
+                focusAreas: ['PM Tools', 'Digital Transformation', 'AI Integration'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            
+            // Layer 4: Enterprise Tool Sources
+            {
+                id: 'monday-blog',
+                name: 'Monday.com Blog',
+                url: 'https://monday.com/blog/',
+                rssUrl: 'https://monday.com/blog/feed/',
+                tier: 'tools',
+                authority: 'Medium',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'Platform Updates',
+                focusAreas: ['PM Automation', 'AI Features', 'Workflow Innovation'],
+                discoveryMethod: 'rss',
+                isActive: true
+            },
+            {
+                id: 'asana-blog',
+                name: 'Asana Blog',
+                url: 'https://blog.asana.com/',
+                rssUrl: 'https://blog.asana.com/feed/',
+                tier: 'tools',
+                authority: 'Medium',
+                checkInterval: 24 * 60 * 60 * 1000,
+                contentType: 'Platform Updates',
+                focusAreas: ['Team Collaboration', 'AI Automation', 'Productivity'],
+                discoveryMethod: 'rss',
+                isActive: true
+            }
+        ];
+
+        this.stats.totalSources = this.sources.length;
+        this.stats.activeSources = this.sources.filter(s => s.isActive).length;
+        this.stats.frontierSources = this.sources.filter(s => s.tier === 'frontier').length;
+        this.stats.businessSources = this.sources.filter(s => s.tier === 'business').length;
+        this.stats.pmoSources = this.sources.filter(s => s.tier === 'pmo').length;
+    }
+
+    async validateSources() {
+        console.log('Validating sources...');
+        let validFeeds = 0;
+        
+        for (let source of this.sources) {
+            if (source.rssUrl && source.discoveryMethod === 'rss') {
+                try {
+                    const feed = await this.parser.parseURL(source.rssUrl);
+                    source.hasValidRSS = true;
+                    source.feedTitle = feed.title;
+                    source.lastFeedUpdate = feed.lastBuildDate || feed.pubDate;
+                    validFeeds++;
+                    console.log(`✅ ${source.name}: RSS valid (${feed.items?.length || 0} items)`);
+                } catch (error) {
+                    source.hasValidRSS = false;
+                    console.log(`❌ ${source.name}: RSS invalid - ${error.message}`);
+                }
+            } else {
+                source.hasValidRSS = false;
+            }
+        }
+        
+        console.log(`📊 Validation: ${validFeeds}/${this.sources.filter(s => s.rssUrl).length} RSS feeds valid`);
+    }
+
+    setupDailyPolling() {
+        console.log('⏰ Setting up 24-hour discovery cycle...');
+        
+        // Run once daily at 4 AM (optimal for global content collection)
+        this.scheduleDailyDiscovery(4, 0);
+    }
+
+    scheduleDailyDiscovery(hour, minute) {
+        const now = new Date();
+        const scheduled = new Date();
+        scheduled.setHours(hour, minute, 0, 0);
+        
+        if (scheduled <= now) {
+            scheduled.setDate(scheduled.getDate() + 1);
+        }
+        
+        const msUntilFirst = scheduled.getTime() - now.getTime();
+        const msPerDay = 24 * 60 * 60 * 1000;
+        
+        setTimeout(() => {
+            this.runFullDiscovery();
+            setInterval(() => this.runFullDiscovery(), msPerDay);
+        }, msUntilFirst);
+        
+        console.log(`📅 Full discovery scheduled for ${hour}:${minute.toString().padStart(2, '0')} daily`);
+    }
+
+    async runFullDiscovery() {
+        // CRITICAL FIX: Prevent duplicate runs
+        if (this.isRunning) {
+            console.log('⚠️ Discovery already running, skipping...');
+            return null;
+        }
+
+        // Try to acquire lock
+        if (!await this.acquireLock()) {
+            console.log('⚠️ Another discovery process is running, skipping...');
+            return null;
+        }
+
+        try {
+            this.isRunning = true;
+            console.log('🚀 Starting 24-hour discovery cycle...');
+            const startTime = Date.now();
+            
+            const allArticles = [];
+            
+            // Discover from all tiers in parallel for efficiency
+            const tierPromises = [
+                this.discoverFromTier('frontier'),
+                this.discoverFromTier('business'), 
+                this.discoverFromTier('pmo'),
+                this.discoverFromTier('tools')
+            ];
+            
+            const tierResults = await Promise.allSettled(tierPromises);
+            
+            tierResults.forEach((result, index) => {
+                const tierNames = ['frontier', 'business', 'pmo', 'tools'];
+                if (result.status === 'fulfilled') {
+                    allArticles.push(...result.value);
+                    console.log(`✅ ${tierNames[index]} tier: ${result.value.length} articles`);
+                } else {
+                    console.log(`❌ ${tierNames[index]} tier failed: ${result.reason}`);
+                }
+            });
+            
+            // Apply intelligent filtering and limit to max articles
+            const filteredArticles = await this.intelligentFiltering(allArticles);
+            const finalArticles = this.limitDailyArticles(filteredArticles);
+            
+            await this.saveDiscoveryResults(finalArticles);
+            
+            const endTime = Date.now();
+            const duration = (endTime - startTime) / 1000;
+            
+            console.log(`🎯 Discovery completed: ${finalArticles.length} articles in ${duration}s`);
+            this.stats.articlesDiscovered = finalArticles.length;
+            this.stats.lastRunTime = new Date().toISOString();
+            
+            return {
+                articles: finalArticles,
+                stats: this.stats,
+                duration: duration
+            };
+
+        } finally {
+            this.isRunning = false;
+            await this.releaseLock();
+        }
+    }
+
+    async discoverFromTier(tier) {
+        const tierSources = this.sources.filter(s => s.tier === tier && s.isActive);
+        const articles = [];
+        
+        for (let source of tierSources) {
+            try {
+                let sourceArticles = [];
+                
+                if (source.discoveryMethod === 'rss' && source.hasValidRSS) {
+                    sourceArticles = await this.pollRSSSource(source);
+                } else if (source.discoveryMethod === 'scraping') {
+                    sourceArticles = await this.intelligentScrape(source);
+                } else if (source.discoveryMethod === 'api') {
+                    sourceArticles = await this.pollAPISource(source);
+                }
+                
+                articles.push(...sourceArticles);
+                source.lastChecked = new Date().toISOString();
+                
+            } catch (error) {
+                console.error(`❌ Error with ${source.name}: ${error.message}`);
+            }
+        }
+        
+        return articles;
+    }
+
+    async pollRSSSource(source) {
+        try {
+            const feed = await this.parser.parseURL(source.rssUrl);
+            const articles = [];
+            
+            // Get articles from last 24 hours
+            const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            
+            for (let item of feed.items.slice(0, 20)) {
+                const publishedDate = new Date(item.pubDate || item.isoDate);
+                
+                // Only include articles from last 24 hours
+                if (publishedDate >= yesterday) {
+                    const article = {
+                        title: item.title,
+                        url: item.link,
+                        summary: item.contentSnippet || item.summary || item.content?.substring(0, 500) || '',
+                        publishedDate: item.pubDate,
+                        author: item.author || item.creator || '',
+                        source: {
+                            name: source.name,
+                            tier: source.tier,
+                            authority: source.authority,
+                            focusAreas: source.focusAreas
+                        },
+                        discoveryMethod: 'RSS',
+                        discoveredAt: new Date().toISOString(),
+                        contentType: source.contentType
+                    };
+                    
+                    articles.push(article);
+                }
+            }
+            
+            return articles;
+            
+        } catch (error) {
+            console.error(`RSS polling failed for ${source.name}: ${error.message}`);
+            return [];
+        }
+    }
+
+    async intelligentScrape(source) {
+        try {
+            const response = await axios.get(source.url, {
+                timeout: 30000,
+                headers: {
+                    'User-Agent': 'PMO-Brain-Enhanced-Discovery/2.0 (AI Content Intelligence)'
+                }
+            });
+            
+            const $ = cheerio.load(response.data);
+            const articles = [];
+            const selectors = this.getIntelligentSelectors(source);
+            
+            $(selectors.articleContainer).each((i, element) => {
+                if (i >= 15) return false; // Increased limit for 24h cycle
+                
+                const $elem = $(element);
+                const title = $elem.find(selectors.title).first().text().trim();
+                const url = $elem.find(selectors.url).first().attr('href');
+                const summary = $elem.find(selectors.summary).first().text().trim();
+                const dateText = $elem.find(selectors.date).first().text().trim();
+                
+                if (title && url) {
+                    const article = {
+                        title,
+                        url: this.resolveURL(url, source.url),
+                        summary: summary.substring(0, 500),
+                        publishedDate: this.parseDate(dateText) || new Date().toISOString(),
+                        author: $elem.find(selectors.author).first().text().trim() || '',
+                        source: {
+                            name: source.name,
+                            tier: source.tier,
+                            authority: source.authority,
+                            focusAreas: source.focusAreas
+                        },
+                        discoveryMethod: 'Scraping',
+                        discoveredAt: new Date().toISOString(),
+                        contentType: source.contentType
+                    };
+                    
+                    articles.push(article);
+                }
+            });
+            
+            return articles;
+            
+        } catch (error) {
+            console.error(`Scraping failed for ${source.name}: ${error.message}`);
+            return [];
+        }
+    }
+
+    async pollAPISource(source) {
+        // Placeholder for API-based sources like GitHub trending
+        // Would implement specific API calls here
+        return [];
+    }
+
+    getIntelligentSelectors(source) {
+        const selectorMap = {
+            'Product Hunt AI': {
+                articleContainer: '[data-test="post-item"], .post-item',
+                title: 'h3, .post-title',
+                url: 'a[href*="/posts/"]',
+                summary: '.post-tagline, .tagline',
+                date: '.post-metadata time, .metadata time',
+                author: '.post-maker, .maker'
+            },
+            'Papers With Code': {
+                articleContainer: '.paper-card, .infinite-item',
+                title: '.paper-title h1, .paper-title',
+                url: 'a[href*="/paper/"]',
+                summary: '.paper-abstract, .abstract',
+                date: '.paper-date, .date',
+                author: '.paper-authors, .authors'
+            },
+            'McKinsey QuantumBlack': {
+                articleContainer: '.insight-item, .article-item',
+                title: 'h3 a, h2 a, .insight-title',
+                url: 'a[href*="/insights/"]',
+                summary: '.insight-teaser, .teaser',
+                date: '.insight-date, .date',
+                author: '.insight-authors, .authors'
+            },
+            'default': {
+                articleContainer: 'article, .article, .post, .card, .item',
+                title: 'h1, h2, h3, .title, .headline',
+                url: 'a',
+                summary: 'p, .excerpt, .summary, .description, .content',
+                date: 'time, .date, .published',
+                author: '.author, .by, .writer'
+            }
+        };
+        
+        return selectorMap[source.name] || selectorMap.default;
+    }
+
+    async intelligentFiltering(articles) {
+        console.log(`🧠 Applying intelligent filtering to ${articles.length} articles...`);
+        
+        // Remove duplicates
+        const uniqueArticles = this.removeDuplicates(articles);
+        
+        // Apply broad relevance filter
+        const relevantArticles = uniqueArticles.filter(article => this.hasAIOrBusinessRelevance(article));
+        
+        console.log(`📊 Filtered: ${articles.length} → ${relevantArticles.length} articles`);
+        return relevantArticles;
+    }
+
+    hasAIOrBusinessRelevance(article) {
+        const text = `${article.title} ${article.summary}`.toLowerCase();
+        
+        // Broad filter for AI + business context
+        const aiKeywords = [
+            'ai', 'artificial intelligence', 'machine learning', 'automation',
+            'algorithm', 'neural network', 'chatgpt', 'openai', 'claude',
+            'generative', 'llm', 'nlp', 'computer vision', 'deep learning'
+        ];
+        
+        const businessKeywords = [
+            'business', 'enterprise', 'organization', 'company', 'management',
+            'project', 'workflow', 'process', 'productivity', 'efficiency',
+            'operations', 'strategy', 'digital transformation', 'automation',
+            'startup', 'funding', 'product', 'tool', 'platform', 'saas'
+        ];
+        
+        const hasAI = aiKeywords.some(keyword => text.includes(keyword));
+        const hasBusiness = businessKeywords.some(keyword => text.includes(keyword));
+        
+        // For frontier sources, AI presence is enough
+        // For business sources, need business context
+        // For PMO sources, accept all (already filtered by source)
+        if (article.source.tier === 'frontier') {
+            return hasAI;
+        } else if (article.source.tier === 'pmo') {
+            return true; // PMO sources are pre-filtered
+        } else {
+            return hasAI && hasBusiness;
+        }
+    }
+
+    removeDuplicates(articles) {
+        const seen = new Set();
+        return articles.filter(article => {
+            const key = `${article.title.toLowerCase()}-${article.url}`;
+            if (seen.has(key)) {
+                return false;
+            }
+            seen.add(key);
+            return true;
+        });
+    }
+
+    limitDailyArticles(articles) {
+        // Ensure we have minimum articles
+        if (articles.length < this.minDailyArticles) {
+            console.log(`⚠️ Only ${articles.length} articles found (min: ${this.minDailyArticles})`);
+            return articles;
+        }
+        
+        // If over maximum, prioritize by source tier and recency
+        if (articles.length > this.maxDailyArticles) {
+            const prioritized = this.prioritizeArticles(articles);
+            const limited = prioritized.slice(0, this.maxDailyArticles);
+            console.log(`🎯 Limited articles: ${articles.length} → ${limited.length}`);
+            return limited;
+        }
+        
+        return articles;
+    }
+
+    prioritizeArticles(articles) {
+        const tierPriority = { 'pmo': 4, 'business': 3, 'frontier': 2, 'tools': 1 };
+        
+        return articles.sort((a, b) => {
+            // First by tier priority
+            const tierDiff = tierPriority[b.source.tier] - tierPriority[a.source.tier];
+            if (tierDiff !== 0) return tierDiff;
+            
+            // Then by recency
+            const dateA = new Date(a.publishedDate || a.discoveredAt);
+            const dateB = new Date(b.publishedDate || b.discoveredAt);
+            return dateB - dateA;
+        });
+    }
+
+    async saveDiscoveryResults(articles) {
+        const stagingDir = path.join(__dirname, '../staging');
+        await fs.mkdir(stagingDir, { recursive: true });
+        
+        const requestId = Date.now();
+        const payload = {
+            articles: articles,
+            timestamp: new Date().toISOString(),
+            requestId: `discovery-${requestId}`,
+            stats: {
+                totalDiscovered: articles.length,
+                byTier: {
+                    frontier: articles.filter(a => a.source.tier === 'frontier').length,
+                    business: articles.filter(a => a.source.tier === 'business').length,
+                    pmo: articles.filter(a => a.source.tier === 'pmo').length,
+                    tools: articles.filter(a => a.source.tier === 'tools').length
+                },
+                discoveryMethods: {
+                    rss: articles.filter(a => a.discoveryMethod === 'RSS').length,
+                    scraping: articles.filter(a => a.discoveryMethod === 'Scraping').length,
+                    api: articles.filter(a => a.discoveryMethod === 'API').length
+                }
+            }
+        };
+        
+        const filename = `discovery-${requestId}.json`;
+        const filepath = path.join(stagingDir, filename);
+        
+        await fs.writeFile(filepath, JSON.stringify(payload, null, 2));
+        console.log(`💾 Saved discovery results to ${filename}`);
+        console.log(`📈 Stats: ${payload.stats.totalDiscovered} total, ${payload.stats.byTier.frontier} frontier, ${payload.stats.byTier.business} business, ${payload.stats.byTier.pmo} PMO`);
+    }
+
+    resolveURL(url, baseUrl) {
+        if (url.startsWith('http')) return url;
+        if (url.startsWith('//')) return 'https:' + url;
+        if (url.startsWith('/')) return new URL(baseUrl).origin + url;
+        return new URL(url, baseUrl).href;
+    }
+
+    parseDate(dateText) {
+        if (!dateText) return null;
+        const parsed = new Date(dateText);
+        return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+    }
+
+    async start() {
+        if (this.isRunning) {
+            console.log('⚠️ Discovery Engine already running');
+            return;
+        }
+        
+        this.isRunning = true;
+        console.log('🚀 Enhanced PMO Brain Discovery Engine started');
+        console.log(`📊 Monitoring ${this.stats.activeSources} sources across 4 tiers`);
+        console.log(`🎯 Daily target: ${this.minDailyArticles}-${this.maxDailyArticles} articles`);
+    }
+
+    async stop() {
+        this.isRunning = false;
+        console.log('🛑 Enhanced PMO Brain Discovery Engine stopped');
+    }
+
+    getStats() {
+        return {
+            ...this.stats,
+            uptime: this.isRunning ? Date.now() - this.startTime : 0,
+            sources: {
+                total: this.sources.length,
+                active: this.sources.filter(s => s.isActive).length,
+                rssEnabled: this.sources.filter(s => s.hasValidRSS).length,
+                byTier: {
+                    frontier: this.stats.frontierSources,
+                    business: this.stats.businessSources,
+                    pmo: this.stats.pmoSources,
+                    tools: this.sources.filter(s => s.tier === 'tools').length
+                }
+            },
+            targets: {
+                dailyMin: this.minDailyArticles,
+                dailyMax: this.maxDailyArticles,
+                weeklyTarget: 20
+            }
+        };
+    }
+}
+
+module.exports = { PMOBrainEnhancedDiscoveryEngine };
+
+// FIXED: Single execution with proper lock mechanism
+if (require.main === module) {
+    async function main() {
+        const engine = new PMOBrainEnhancedDiscoveryEngine();
+        
+        // Check if already running
+        if (!await engine.acquireLock()) {
+            console.log('Discovery already running, skipping...');
+            process.exit(0);
+        }
+        
+        try {
+            await engine.initialize();
+            console.log('Running automated discovery...');
+            const result = await engine.runFullDiscovery();
+            
+            if (result) {
+                console.log('Automated discovery completed');
+            } else {
+                console.log('Discovery was skipped (already running)');
+            }
+        } catch (error) {
+            console.error('Discovery failed:', error);
+            process.exit(1);
+        } finally {
+            await engine.releaseLock();
+        }
+    }
+    
+    main().catch(console.error);
+}

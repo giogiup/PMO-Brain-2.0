@@ -1,0 +1,44 @@
+# Newsletter Card Generation v2.2
+**VERSION:** 2.2  
+**DATE:** 2025-10-08  
+**CHANGE:** Score threshold lowered to 50, top 8-12 articles
+
+---
+
+## STEP 1: Query Top Articles
+```sql
+SELECT id, title, url, pmo_score, full_content 
+FROM daily_insights 
+WHERE published_date = DATE('now') 
+  AND content_fetched = 1
+  AND pmo_score >= 50
+ORDER BY pmo_score DESC 
+LIMIT 12
+```
+
+---
+
+## STEP 2: Generate Cards
+
+For each article:
+
+**Tagline:** 12 words max, benefit-focused hook
+
+**TLDR:** 4 bullets, 20-30 words each
+- PMO pain point solved
+- AI features/capabilities  
+- Quick action steps
+- Specific use cases
+
+**Badges** (exact values only):
+- **pmo_area:** Risk|Scope|Schedule|Cost|Quality|Resource|Stakeholder|Integration|Procurement
+- **implementation_speed:** Quick Win|Weeks to Deploy|Long to Deploy
+- **skill_level:** Beginner|Intermediate|Advanced|Expert
+- **price_info:** Free|Freemium|Paid|Enterprise
+- **read_time:** word_count/200 rounded
+
+---
+
+## STEP 3: Save (Check for duplicates)
+
+**Check

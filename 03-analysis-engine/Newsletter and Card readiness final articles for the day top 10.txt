@@ -1,0 +1,195 @@
+************************Step 1 - Run search manually***********************
+Only is this needs to be done ad hoc - otherwise below is done in Task Schedule
+
+cd D:\PMO-Brain-2.0-Modular\02-discovery-engine
+.\run-discovery.bat
+
+Step 2 - Content Scoring**********************************************
+
+
+*******************************Step 3a - Fetch prompt is the prompt builder that helps the web-fetch in Claude***************
+once done pasted into claude with the full prompt below
+
+Run .\fetch-prompt-builder.ps1  
+Ctrl+V here in Claude
+Done
+
+the actual fetch prompt that gets the data form the fetch - full content an dformats and places in database - this is missing! 
+
+
+***********************************Step 3b***************************************************** 
+ **PROMPT **
+# Extract Keywords from Today's Fetched Articles
+
+## Context
+Database: D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db
+Task: Extract keywords from articles with fetched content but no keywords yet
+
+## Query Articles
+SELECT id, title, full_content 
+FROM daily_insights 
+WHERE date = DATE('now') 
+  AND content_fetched = 1 
+  AND keywords_extracted = 0
+  AND pmo_score >= 70
+ORDER BY pmo_score DESC;
+
+## Keyword Extraction Rules
+
+For each article, extract 5-7 specific, valuable keywords:
+- Specific tool/platform names
+- AI/automation concepts
+- Technical terminology
+- PMO/business practices
+
+Avoid: Generic words (AI, tool, software, system, platform)
+
+Categorize each: tool, concept, practice, technical
+Score relevance: 1-10 (10 = highly specific/valuable)
+
+## Save to Database
+
+INSERT OR IGNORE INTO article_keywords (article_id, keyword, keyword_category, relevance_score, created_at) 
+VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP);
+
+UPDATE daily_insights 
+SET keywords_extracted = 1, 
+    keyword_count = (SELECT COUNT(*) FROM article_keywords WHERE article_id = ?)
+WHERE id = ?;
+
+## Summary Report
+Articles processed, keywords extracted, database records saved.
+
+Execute now.
+
+**********************************Step 4 *************************************
+***********************************# **PROMPT**
+
+# Newsletter Content Generation
+# Optimized for token efficiency - generates newsletter content from existing full_content
+
+$date = Get-Date -Format "yyyy-MM-dd"
+
+# Get articles needing newsletter content
+$articles = Invoke-SqliteQuery -Query @"
+SELECT id, title, url, full_content, pmo_score, pmo_application, article_keywords
+FROM daily_insights 
+WHERE date = '$date' 
+  AND content_fetched = 1 
+  AND newsletter_created = 0
+  AND pmo_score >= 50
+ORDER BY pmo_score DESC 
+LIMIT 10
+"@
+
+if ($articles.Count -eq 0) {
+    Write-Host "No articles need newsletter content for $date"
+    exit
+}
+
+Write-Host "Creating newsletter content for $($articles.Count) articles"
+Write-Host "Paste this prompt into Claude:"
+Write-Host "`n---PROMPT START---`n"
+
+@"
+Generate newsletter content for these articles. Use existing full_content field - do NOT use web_fetch.
+
+ARTICLES DATA:
+$($articles | ForEach-Object {
+@"
+
+ID: $($_.id)
+TITLE: $($_.title)
+URL: $($_.url)
+PMO_SCORE: $($_.pmo_score)
+KEYWORDS: $($_.article_keywords)
+FULL_CONTENT:
+$($_.full_content)
+---
+"@
+} | Out-String)
+
+INSTRUCTIONS:
+
+For each article, create 7 sections:
+
+1. HEADLINE (5-8 words, benefit-driven)
+
+2. TAGLINE (1 sentence, max 12 words)
+
+3. TLDR (4 bullet points):
+   - PMO pain point this solves
+   - Key features and benefits
+   - Quick action to take
+   - How PMOs apply this
+
+4. WHY IT MATTERS (100-150 words paragraph)
+   - PMO pain point context
+   - Industry relevance
+   - Impact and consequences
+   - Why urgent/important now
+
+5. WHAT YOU GET (100-150 words paragraph)
+   - Core features explained
+   - Primary benefits
+   - How it works
+   - Real-world application examples
+
+6. QUICK WIN (80-100 words paragraph)
+   - Concrete action under 2 hours
+   - Step-by-step guidance
+   - What to expect as outcome
+   - Why this week specifically
+
+7. PMO APPLICATION (100-150 words paragraph)
+   Must include tier classification at start:
+
+   TIER 1 (Score 85-100): Direct PMO+AI mention
+   Format: "TIER 1 - Direct Application: [Reinforce specific PMO value]"
+   
+   TIER 2 (Score 70-84): Inferred PMO relevance, no explicit mention
+   Format: "TIER 2 - Inferred Application: While not PMO-specific, this applies because [explain inference]. Consider using for: [3-4 concrete PMO scenarios]"
+   
+   TIER 3 (Score 50-69): Possible PMO use, requires adaptation
+   Format: "TIER 3 - Creative Application: This requires adaptation but PMOs could leverage for [explain potential]. Possible uses: [3-4 creative scenarios]"
+
+OUTPUT FORMAT:
+
+After processing all articles, provide summary table only:
+
+ID | Headline | Tier | Words | Status
+1  | [text]   | 2    | 847   | Ready
+2  | [text]   | 1    | 923   | Ready
+
+Then provide full content blocks:
+
+ARTICLE_ID: [id]
+HEADLINE: [text]
+TAGLINE: [text]
+TLDR:
+- [bullet 1]
+- [bullet 2]
+- [bullet 3]
+- [bullet 4]
+WHY_IT_MATTERS: [paragraph]
+WHAT_YOU_GET: [paragraph]
+QUICK_WIN: [paragraph]
+PMO_APPLICATION: [paragraph with tier classification]
+KEYWORDS: [from article_keywords field]
+---
+
+DATABASE UPDATES:
+
+After Claude provides content, run these INSERT statements for each article:
+
+INSERT INTO newsletter_content (article_id, newsletter_date, headline, tagline, tldr, why_it_matters, what_you_get, quick_win, pmo_application_text, relevance_tier, created_at)
+VALUES ([id], '$date', '[headline]', '[tagline]', '[tldr]', '[why_it_matters]', '[what_you_get]', '[quick_win]', '[pmo_application]', [tier_number], datetime('now'));
+
+UPDATE daily_insights 
+SET newsletter_created = 1, 
+    newsletter_word_count = [total_word_count]
+WHERE id = [article_id];
+"@
+
+Write-Host "`n---PROMPT END---`n"
+

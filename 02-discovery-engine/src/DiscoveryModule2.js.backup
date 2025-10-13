@@ -1,0 +1,338 @@
+// Version 2.251006b - Fixed to use published_date instead of discovery date
+const { PMOBrainEnhancedDiscoveryEngine } = require('./discovery-engine');
+const DatabaseManager = require('../database/DatabaseManager');
+const fs = require('fs');
+const path = require('path');
+
+class DiscoveryModule {
+  constructor() {
+    this.engine = new PMOBrainEnhancedDiscoveryEngine();
+    this.dataPath = path.join(__dirname, '../staging');
+    this.database = new DatabaseManager();
+    this.isDatabaseReady = false;
+  }
+
+  async initialize() {
+    try {
+      console.log('🔧 Initializing Discovery Module with Database...');
+      
+      // Initialize database
+      await this.database.initialize();
+      this.isDatabaseReady = true;
+      
+      // Initialize discovery engine
+      await this.engine.initialize();
+      
+      console.log('✅ Discovery Module ready with database integration');
+      
+    } catch (error) {
+      console.error('❌ Discovery Module initialization failed:', error);
+      throw error;
+    }
+  }
+
+  async findArticles() {
+    try {
+      // First try to get recent articles from database
+      const recentArticles = await this.database.getDailyTop();
+      
+      if (recentArticles.length > 0) {
+        console.log(`📊 Using ${recentArticles.length} articles from database`);
+        return this.convertDatabaseToDiscoveryFormat(recentArticles);
+      }
+
+      // If no recent database articles, check for JSON files (fallback)
+      const discoveryFiles = fs.readdirSync(this.dataPath)
+        .filter(file => file.startsWith('discovery-') && file.endsWith('.json'))
+        .sort()
+        .reverse();
+
+      if (discoveryFiles.length > 0) {
+        console.log('📂 Found JSON discovery files, importing to database...');
+        await this.importJsonToDatabase(discoveryFiles[0]);
+        
+        // Now get from database
+        const articles = await this.database.getDailyTop();
+        return this.convertDatabaseToDiscoveryFormat(articles);
+      }
+
+      // No data found, run fresh discovery
+      console.log('🔍 No recent data found, running fresh discovery...');
+      await this.runDiscoveryAndStore();
+      
+      // Get results from database
+      const freshArticles = await this.database.getDailyTop();
+      return this.convertDatabaseToDiscoveryFormat(freshArticles);
+      
+    } catch (error) {
+      console.error('❌ Error in findArticles:', error);
+      return [];
+    }
+  }
+
+  async runDiscoveryAndStore() {
+    try {
+      console.log('🚀 Running discovery and storing in database...');
+      
+      // Run discovery engine
+      await this.engine.initialize();
+      await this.engine.start();
+      const discoveryResults = await this.engine.runFullDiscovery();
+      
+      if (!discoveryResults || !discoveryResults.articles) {
+        console.log('⚠️ No articles discovered');
+        return;
+      }
+
+      // Convert discovery format to database format
+      const insights = this.convertDiscoveryToDatabaseFormat(discoveryResults.articles);
+      
+      // Store in database
+      const stored = await this.database.storeDailyInsights(insights);
+      console.log(`✅ Stored ${stored} articles in database`);
+      
+      // Also save JSON backup (optional)
+      await this.saveJsonBackup(discoveryResults);
+      
+    } catch (error) {
+      console.error('❌ Discovery and store failed:', error);
+      throw error;
+    }
+  }
+
+  async importJsonToDatabase(filename) {
+    try {
+      const filePath = path.join(this.dataPath, filename);
+      const discoveryData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      
+      if (discoveryData.articles && discoveryData.articles.length > 0) {
+        const insights = this.convertDiscoveryToDatabaseFormat(discoveryData.articles);
+        const stored = await this.database.storeDailyInsights(insights);
+        console.log(`📥 Imported ${stored} articles from ${filename}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ JSON import failed:', error);
+    }
+  }
+
+  convertDiscoveryToDatabaseFormat(articles) {
+    const discoveryTime = new Date().toISOString();
+    
+    return articles.map(article => {
+      // Extract published date from article, fallback to discovery time
+      let publishedDate;
+      if (article.publishedDate) {
+        publishedDate = article.publishedDate.split('T')[0]; // YYYY-MM-DD
+      } else {
+        publishedDate = discoveryTime.split('T')[0];
+        console.warn(`⚠️ No published date for "${article.title}", using discovery date`);
+      }
+      
+      return {
+        // REQUIRED FIELDS - Use PUBLISHED date not discovery date
+        published_date: publishedDate,
+        discovered_at: discoveryTime,
+        title: article.title || 'Untitled',
+        url: article.url || article.link || '',
+        
+        // CONTENT FIELDS (matching schema)
+        content_summary: article.summary || article.description || '',
+        full_content: article.summary || article.description || '',
+        
+        // PMO SCORING (leave null for Claude to score later)
+        pmo_score: null,
+        pmo_application: this.extractPMOApplication(article),
+        pmbok_area: this.extractPMBOKArea(article),
+        
+        // STATUS FLAGS
+        featured_status: 0,
+        newsletter_included: 0,
+        website_published: 0,
+        
+        // FETCH STATUS
+        content_fetched: 0,
+        fetch_status: 'pending',
+        fetch_attempts: 0,
+        
+        // KEYWORD FLAGS
+        keywords_extracted: 0,
+        keyword_count: 0,
+        
+        // NEWSLETTER FLAGS
+        newsletter_created: 0,
+        
+        // RANKING
+        daily_rank: null,
+        
+        // SCORING VERSION (will be set when Claude scores)
+        scoring_prompt_version: null
+      };
+    });
+  }
+
+  convertDatabaseToDiscoveryFormat(dbArticles) {
+    return dbArticles.map(article => ({
+      title: article.title,
+      url: article.url,
+      summary: article.content_summary || article.full_content,
+      publishedDate: article.published_date,
+      discoveredAt: article.discovered_at || article.created_at,
+      source: {
+        name: article.source || 'Unknown',
+        tier: this.inferTierFromSource(article.source),
+        authority: 'Medium'
+      },
+      pmoScore: article.pmo_score,
+      discoveryMethod: 'Database',
+      createdAt: article.created_at
+    }));
+  }
+
+  calculateBasicPMOScore(article) {
+    const title = (article.title || '').toLowerCase();
+    const content = (article.summary || article.description || '').toLowerCase();
+    const fullText = `${title} ${content}`;
+    
+    let score = 0;
+    
+    // AI relevance
+    const aiKeywords = ['ai', 'artificial intelligence', 'machine learning', 'automation', 'chatgpt'];
+    if (aiKeywords.some(keyword => fullText.includes(keyword))) score += 3;
+    
+    // PMO relevance
+    const pmoKeywords = ['project management', 'pmo', 'project manager', 'agile', 'scrum'];
+    if (pmoKeywords.some(keyword => fullText.includes(keyword))) score += 4;
+    
+    // Business relevance
+    const businessKeywords = ['productivity', 'efficiency', 'workflow', 'process', 'team'];
+    if (businessKeywords.some(keyword => fullText.includes(keyword))) score += 2;
+    
+    // Source authority bonus
+    if (article.source?.authority === 'High') score += 1;
+    
+    return Math.min(score, 10); // Cap at 10
+  }
+
+  extractAITechnology(article) {
+    const text = `${article.title} ${article.summary || ''}`.toLowerCase();
+    
+    if (text.includes('gpt') || text.includes('llm')) return 'Large Language Models';
+    if (text.includes('machine learning') || text.includes('ml')) return 'Machine Learning';
+    if (text.includes('automation')) return 'Process Automation';
+    if (text.includes('chatbot') || text.includes('assistant')) return 'AI Assistant';
+    
+    return 'General AI';
+  }
+
+  extractPMBOKArea(article) {
+    const text = `${article.title} ${article.summary || ''}`.toLowerCase();
+    
+    if (text.includes('schedule') || text.includes('timeline')) return 'Schedule Management';
+    if (text.includes('resource') || text.includes('team')) return 'Resource Management';
+    if (text.includes('risk')) return 'Risk Management';
+    if (text.includes('communication') || text.includes('stakeholder')) return 'Communications Management';
+    if (text.includes('scope') || text.includes('requirements')) return 'Scope Management';
+    if (text.includes('cost') || text.includes('budget')) return 'Cost Management';
+    
+    return 'Integration Management';
+  }
+
+  extractPMOApplication(article) {
+    const text = `${article.title} ${article.summary || ''}`.toLowerCase();
+    
+    if (text.includes('automat')) return 'Process automation and optimization';
+    if (text.includes('planning') || text.includes('schedule')) return 'Automated planning and scheduling';
+    if (text.includes('report') || text.includes('dashboard')) return 'Intelligent reporting and dashboards';
+    if (text.includes('risk')) return 'Risk analysis and mitigation';
+    if (text.includes('team') || text.includes('collaboration')) return 'Team collaboration enhancement';
+    
+    return 'General project management enhancement';
+  }
+
+  inferTierFromSource(sourceName) {
+    const name = (sourceName || '').toLowerCase();
+    
+    if (name.includes('techcrunch') || name.includes('wired')) return 'ai-news';
+    if (name.includes('harvard') || name.includes('mckinsey')) return 'business';
+    if (name.includes('pmi') || name.includes('project')) return 'pmo';
+    
+    return 'industry';
+  }
+
+  async saveJsonBackup(discoveryResults) {
+    try {
+      const filename = `discovery-backup-${Date.now()}.json`;
+      const filepath = path.join(this.dataPath, filename);
+      
+      await fs.promises.writeFile(filepath, JSON.stringify(discoveryResults, null, 2));
+      console.log(`💾 JSON backup saved: ${filename}`);
+      
+    } catch (error) {
+      console.warn('⚠️ JSON backup failed:', error.message);
+    }
+  }
+
+  async runDiscovery() {
+    // Legacy method - now uses runDiscoveryAndStore
+    return this.runDiscoveryAndStore();
+  }
+
+  // New methods for website and newsletter integration
+  async getRollingArticles(limit = 50) {
+    if (!this.isDatabaseReady) {
+      await this.initialize();
+    }
+    
+    return await this.database.getRollingInsights(5, limit);
+  }
+
+  async getDailyHighlight() {
+    if (!this.isDatabaseReady) {
+      await this.initialize();
+    }
+    
+    return await this.database.getDailyHighlight();
+  }
+
+  async getWeeklyArticles(weekStart, limit = 10) {
+    if (!this.isDatabaseReady) {
+      await this.initialize();
+    }
+    
+    const weekEnd = this.getWeekEndDate(weekStart);
+    return await this.database.getWeeklyTop(weekStart, weekEnd, limit);
+  }
+
+  getWeekEndDate(weekStart) {
+    const startDate = new Date(weekStart);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+    return endDate.toISOString().split('T')[0];
+  }
+
+  async getStats() {
+    const engineStats = this.engine.getStats();
+    const dbStats = await this.database.getStats();
+    
+    return {
+      ...engineStats,
+      database: dbStats,
+      integration: {
+        databaseReady: this.isDatabaseReady,
+        lastUpdate: new Date().toISOString()
+      }
+    };
+  }
+
+  async close() {
+    if (this.database) {
+      await this.database.close();
+    }
+    if (this.engine) {
+      await this.engine.stop();
+    }
+  }
+}
+
+module.exports = DiscoveryModule;

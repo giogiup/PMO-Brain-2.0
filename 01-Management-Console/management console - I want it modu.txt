@@ -1,0 +1,38 @@
+management console - I want it modularised - separate code per tab - so if I want to modify a tab - just update that module. not redo th entire site. 
+
+Functionality I want:
+
+I want to be able to filter on the heading. need the filters in a row across the top for discovery - ability to filter on these:
+Title	Date	Score	Pre-Filter - a dropdown. also if you click on th eheading it must sort the column low to high - then on next click high to low
+
+same as above for sources these columns Name	Type	Tier	Status	Found	Inserted	Last Run	Action
+
+same for operations - these headings Time	Operation	Component	Status	Message	Records	Duration
+
+for backlog - there was a filter in place on the old console - like this 
+
+Priority
+Critical
+High
+Medium
+Low
+All
+None
+
+Category
+Website
+Prompts
+Discovery Engine
+Newsletter Engine
+Analysis Engine
+Database
+Automation
+Deployment
+General
+All
+None want them side by side an din block so it does not waste so much space
+
+on discovery statistics - want to be able to filter by the run date - a calendar function to allow me to specify a date. 
+
+For pre-filter config in prefilter - can you modify th edesign so it is in a table and not the long whole width input box  -create a more compact design
+

@@ -1,0 +1,1 @@
+{"name":"analysis-engine","version":"1.0.0","main":"index.js","dependencies":{"express":"^5.1.0","groq-sdk":"^0.30.0","sqlite3":"^5.1.7"}}

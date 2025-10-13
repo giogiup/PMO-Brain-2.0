@@ -1,0 +1,62 @@
+# Keyword Extraction Prompt v2.0 (Optimized)
+**VERSION:** 2.0  
+**DATE:** 2025-10-08  
+**OPTIMIZATIONS:** Batch processing, reduced token usage, minimal output
+
+---
+
+## Query Articles
+```sql
+SELECT id, title, full_content 
+FROM daily_insights 
+WHERE published_date = DATE('now') 
+  AND content_fetched = 1 
+  AND keywords_extracted = 0
+  AND pmo_score >= 50
+ORDER BY pmo_score DESC
+LIMIT 12
+```
+
+---
+
+## Extraction Rules (3 keywords per article)
+
+**Include:**
+- Tool/platform names (Asana, Monday.com, GPT-4)
+- AI/automation concepts (agentic workflow, RAG, prompt engineering)
+- PMO/business practices (risk management, stakeholder alignment)
+
+**Avoid:**
+- Generic words (AI, tool, software, platform, technology)
+- Common verbs (use, implement, create)
+- Vague terms (solution, approach, method)
+
+**Categories:** tool | concept | practice | technical
+
+## Process (Optimized)
+
+**STEP 1:** Analyze all articles silently
+
+**STEP 2:** Single batch INSERT
+```sql
+INSERT OR IGNORE INTO article_keywords (article_id, keyword, keyword_category, relevance_score, created_at) 
+VALUES 
+(id1, 'keyword1', 'category1', score1, CURRENT_TIMESTAMP),
+(id1, 'keyword2', 'category2', score2, CURRENT_TIMESTAMP),
+(id1, 'keyword3', 'category3', score3, CURRENT_TIMESTAMP),
+(id2, 'keyword1', 'category1', score1, CURRENT_TIMESTAMP),
+...
+```
+
+**STEP 3:** Single batch UPDATE
+```sql
+UPDATE daily_insights 
+SET keywords_extracted = 1, keyword_count = 3
+WHERE id IN (id1, id2, id3, ...)
+```
+
+**STEP 4:** Output only
+```
+Complete: X articles processed
+
+**No verbose logging. No per-article updates. Maximum efficiency.**

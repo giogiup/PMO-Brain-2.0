@@ -1,0 +1,41 @@
+{
+  "name": "smartpmo-automation",
+  "version": "1.0.0",
+  "description": "SmartPMO.ai Daily Automation Pipeline",
+  "main": "run-daily-pipeline.js",
+  "scripts": {
+    "start": "node run-daily-pipeline.js",
+    "test": "node run-daily-pipeline.js --test",
+    "discovery": "node run-daily-pipeline.js --skip-scoring --skip-fetch --skip-keywords --skip-cards --skip-deploy",
+    "scoring": "node run-daily-pipeline.js --skip-discovery --skip-fetch --skip-keywords --skip-cards --skip-deploy",
+    "fetch": "node run-daily-pipeline.js --skip-discovery --skip-scoring --skip-keywords --skip-cards --skip-deploy",
+    "keywords": "node run-daily-pipeline.js --skip-discovery --skip-scoring --skip-fetch --skip-cards --skip-deploy",
+    "cards": "node run-daily-pipeline.js --skip-discovery --skip-scoring --skip-fetch --skip-keywords --skip-deploy",
+    "deploy": "node run-daily-pipeline.js --skip-discovery --skip-scoring --skip-fetch --skip-keywords --skip-cards"
+  },
+  "keywords": [
+    "automation",
+    "pmo",
+    "ai",
+    "discovery"
+  ],
+  "author": "SmartPMO.ai",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "groq-sdk": "^0.33.0",
+    "openai": "^6.3.0",
+    "rss-parser": "^3.13.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

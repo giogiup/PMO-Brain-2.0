@@ -1,0 +1,135 @@
+# Keyword Extraction Prompt v1.1
+**VERSION:** 1.1  
+**DATE:** 2025-10-06  
+**CHANGES:** Updated to use `published_date` field (was `date`)
+
+---
+
+## Context
+Database: D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db  
+Task: Extract keywords from articles with fetched content but no keywords yet
+
+---
+
+## Query Articles
+
+```sql
+SELECT id, title, full_content 
+FROM daily_insights 
+WHERE published_date = DATE('now') 
+  AND content_fetched = 1 
+  AND keywords_extracted = 0
+  AND pmo_score >= 70
+ORDER BY pmo_score DESC
+```
+
+---
+
+## Keyword Extraction Rules
+
+For each article, extract **5-7 specific, valuable keywords**:
+
+### Include
+- Specific tool/platform names (e.g., "Asana", "Monday.com", "GPT-4")
+- AI/automation concepts (e.g., "agentic workflow", "RAG", "prompt engineering")
+- Technical terminology (e.g., "API integration", "machine learning", "vector database")
+- PMO/business practices (e.g., "risk management", "stakeholder alignment", "resource planning")
+
+### Avoid
+- Generic words: AI, tool, software, system, platform, technology
+- Common verbs: use, implement, create, build
+- Vague terms: solution, approach, method
+
+### Categorize Each Keyword
+- **tool** - Specific software/platform names
+- **concept** - AI/automation concepts and methodologies
+- **practice** - PMO/business practices and frameworks
+- **technical** - Technical terminology and standards
+
+### Score Relevance (1-10)
+- 10 = Highly specific and valuable (e.g., "Claude API", "Monte Carlo simulation")
+- 7-9 = Specific and useful (e.g., "workflow automation", "stakeholder management")
+- 4-6 = Somewhat useful (e.g., "productivity", "optimization")
+- 1-3 = Generic or low value (avoid these)
+
+**Only include keywords with relevance score 7+**
+
+---
+
+## Save to Database
+
+For each article, execute these statements:
+
+### Insert Keywords
+```sql
+INSERT OR IGNORE INTO article_keywords (article_id, keyword, keyword_category, relevance_score, created_at) 
+VALUES 
+(?, 'keyword1', 'category1', score1, CURRENT_TIMESTAMP),
+(?, 'keyword2', 'category2', score2, CURRENT_TIMESTAMP),
+(?, 'keyword3', 'category3', score3, CURRENT_TIMESTAMP),
+(?, 'keyword4', 'category4', score4, CURRENT_TIMESTAMP),
+(?, 'keyword5', 'category5', score5, CURRENT_TIMESTAMP)
+-- Continue for all keywords
+```
+
+### Update Article Status
+```sql
+UPDATE daily_insights 
+SET keywords_extracted = 1, 
+    keyword_count = [number_of_keywords_inserted]
+WHERE id = ?
+```
+
+---
+
+## Process Flow
+
+1. Read all articles from query
+2. For each article:
+   - Extract 5-7 keywords silently
+   - Categorize and score each
+   - Insert into article_keywords table
+   - Update daily_insights record
+3. Show progress: "Article [id] complete: [X] keywords"
+4. Continue until all articles processed
+
+---
+
+## Summary Report
+
+After all articles processed, provide:
+
+```
+KEYWORD EXTRACTION COMPLETE
+
+Articles Processed: [X]
+Total Keywords Extracted: [Y]
+Average Keywords per Article: [Z]
+
+Keywords by Category:
+- Tools: [count]
+- Concepts: [count]
+- Practices: [count]
+- Technical: [count]
+
+Top 10 Keywords (by relevance score):
+[List with article_id, keyword, category, score]
+```
+
+---
+
+## Example Output
+
+**Article ID 123:**
+Keywords extracted: 6
+
+| Keyword | Category | Score |
+|---------|----------|-------|
+| Claude API | tool | 10 |
+| agentic workflow | concept | 9 |
+| prompt engineering | technical | 9 |
+| stakeholder alignment | practice | 8 |
+| RAG pipeline | technical | 8 |
+| Monday.com | tool | 7 |
+
+Database updated: 6 keywords inserted, keywords_extracted = 1

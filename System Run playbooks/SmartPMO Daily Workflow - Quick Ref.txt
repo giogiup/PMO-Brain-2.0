@@ -1,0 +1,154 @@
+# SmartPMO Daily Workflow - Quick Reference
+
+## 🚀 5-Step Daily Process
+
+### 1️⃣ DISCOVERY (Automated)
+```bash
+cd D:\PMO-Brain-2.0-Modular\02-discovery-engine
+.\run-discovery.bat
+```
+**Output:** 100-200 new articles discovered
+
+---
+
+### 2️⃣ SCORING (Manual - 10 min)
+**File:** `Content Scoring Prompt v1.2.txt`
+
+**In Claude Desktop:**
+- Paste full prompt
+- Processes in batches of 20
+- Scores all unscored articles (1-100)
+
+**Expected:** 10-20 articles with score 70+
+
+---
+
+### 3️⃣ FETCH (Manual - 15 min)
+**Step 1:** Generate prompt
+```powershell
+.\fetch-prompt-builder.ps1
+```
+
+**Step 2:** In Claude Desktop
+- Paste prompt from clipboard (Ctrl+V)
+- Fetches full content for top 10 articles
+- Stops at 10 successful fetches
+
+**Expected:** 10 articles with full_content
+
+---
+
+### 4️⃣ KEYWORDS (Manual - 5 min)
+**File:** `Keyword Extraction Prompt v1.1.txt`
+
+**In Claude Desktop:**
+- Paste full prompt
+- Extracts 5-7 keywords per article
+- Updates database automatically
+
+**Expected:** 50-70 keywords extracted
+
+---
+
+### 5️⃣ NEWSLETTER (Manual - 20 min)
+**File:** `Newsletter Generation Prompt v2.1.txt`
+
+**In Claude Desktop:**
+- Paste full prompt
+- Generates 7 sections per article
+- Manual SQL inserts required
+
+**Expected:** 10 newsletter cards ready
+
+---
+
+## 📊 Verification Queries
+
+**Check Today's Progress:**
+```sql
+SELECT 
+    COUNT(*) as total,
+    SUM(CASE WHEN pmo_score IS NOT NULL THEN 1 ELSE 0 END) as scored,
+    SUM(CASE WHEN content_fetched = 1 THEN 1 ELSE 0 END) as fetched,
+    SUM(CASE WHEN keywords_extracted = 1 THEN 1 ELSE 0 END) as keywords,
+    SUM(CASE WHEN newsletter_created = 1 THEN 1 ELSE 0 END) as newsletter
+FROM daily_insights
+WHERE published_date = DATE('now')
+```
+
+**View Top Scores:**
+```sql
+SELECT id, title, pmo_score, fetch_status
+FROM daily_insights 
+WHERE published_date = DATE('now') AND pmo_score >= 70
+ORDER BY pmo_score DESC
+```
+
+---
+
+## 🔧 Key Database Fields
+
+**Daily Insights Table:**
+- `published_date` - Article publish date (NOT discovery date)
+- `discovered_at` - When we found the article
+- `pmo_score` - Relevance score (1-100)
+- `content_fetched` - Boolean flag
+- `fetch_status` - 'success', 'failed', 'pending'
+- `full_content` - Complete article text
+- `keywords_extracted` - Boolean flag
+- `newsletter_created` - Boolean flag
+
+---
+
+## ⚡ Quick Commands
+
+**Start Management Console:**
+```bash
+cd D:\PMO-Brain-2.0-Modular\01-Management-Console
+npm start
+```
+Access at: http://localhost:8080/console
+
+**Daily Run Tracker API:**
+http://localhost:8080/api/daily-run
+
+**Check Workflow Status:**
+```sql
+SELECT * FROM workflow_runs 
+WHERE run_date = DATE('now')
+ORDER BY step_number
+```
+
+---
+
+## 📝 Prompt Versions
+
+| Prompt | Version | Key Change |
+|--------|---------|------------|
+| Scoring | v1.2 | Uses published_date |
+| Fetch | v1.0 | Full content extraction |
+| Keywords | v1.1 | Uses published_date |
+| Newsletter | v2.1 | Uses published_date |
+
+---
+
+## 🎯 Daily Targets
+
+- Articles discovered: 100-200
+- Articles scored: All discovered
+- High scores (70+): 10-20
+- Content fetched: 10
+- Keywords extracted: 50-70
+- Newsletter cards: 10
+
+---
+
+## 📍 File Locations
+
+**Database:** `D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db`
+
+**Scripts:** `D:\PMO-Brain-2.0-Modular\02-discovery-engine\`
+
+**Prompts:** (Stored in project documentation)
+
+**Location:** South Africa (SAST - UTC+2)

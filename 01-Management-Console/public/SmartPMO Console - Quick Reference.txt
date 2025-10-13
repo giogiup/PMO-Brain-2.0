@@ -1,0 +1,303 @@
+# 🎯 SmartPMO Console - Quick Reference Card
+
+## 🚀 Starting & Stopping
+
+```powershell
+# Start console (opens browser automatically)
+.\start-console.ps1
+
+# Stop console
+.\stop-console.ps1
+
+# Manual start (stays in foreground)
+cd D:\PMO-Brain-2.0-Modular\01-Management-Console
+node server.js
+```
+
+**URL:** http://localhost:8080/console.html
+
+---
+
+## 🔔 Alert Conditions
+
+| Alert | Trigger | Action Required |
+|-------|---------|-----------------|
+| 🔴 Pipeline Failed | Pipeline error in last hour | Check Operations tab, review error log |
+| 🟠 Low Pre-Filter | <50 articles passed | Review Pre-Filter config, lower threshold |
+| 🔴 No Discovery | 0 articles today | Check Discovery engine, verify RSS sources |
+| 🟠 Operation Errors | Failed ops in 24h | Review Operations log, identify pattern |
+
+**Notification Bell:**
+- Gray = No alerts
+- Red + Flashing = Active alerts (click to view details)
+
+---
+
+## 📊 Tab Quick Actions
+
+### Dashboard (Tab 1)
+- `Refresh Data` → Update all stats and charts
+- Auto-checks alerts every 30 seconds
+
+### Discovery (Tab 2)
+- View recent articles
+- Monitor discovery performance
+- Check PMO scores
+
+### Sources (Tab 3)
+- `Toggle` button → Enable/disable RSS source
+- Monitor source productivity
+
+### Pre-Filter (Tab 4)
+**Quick Config Changes:**
+- Lower `pass_threshold` (100→80) = More articles pass
+- Raise `pass_threshold` (100→120) = Fewer articles pass
+- Change `max_articles_to_pass` = Limit sent to scoring
+
+**Keywords:**
+- `Toggle` → Enable/disable keyword
+- `Delete` → Remove keyword permanently
+- Filter by tier to find specific keywords
+
+### Prompts (Tab 5)
+**Save New Version:**
+1. Edit prompt text
+2. Change version (v1.3 → v1.4)
+3. Add notes
+4. Click "Save & Activate"
+
+**Restore Old Version:**
+- Click version in history → Auto-loads prompt
+
+### Backlog (Tab 6)
+**Add Task:**
+1. Fill title + description
+2. Select category + priority
+3. Click "Add Task"
+
+**Move Task:**
+- Click card → Cycles through: To Do → In Progress → Blocked → Done
+
+### Operations (Tab 7)
+- `Refresh` → Update operations log
+- Monitor: Success rate >80%, Avg duration <60s
+
+### Restart (Tab 8)
+- Click `Copy` → Paste into new Claude chat
+
+---
+
+## ⚙️ Common Tasks
+
+### Adjust Pre-Filter to Pass More Articles
+
+```
+1. Go to Pre-Filter tab
+2. Find "pass_threshold" field
+3. Change: 100 → 80 (or lower)
+4. Field auto-saves on change
+```
+
+### Create New Scoring Prompt Version
+
+```
+1. Go to Prompts tab → Scoring section
+2. Edit prompt text
+3. Version: v1.3 → v1.4
+4. Notes: "Added exclusion for entertainment articles"
+5. Click "Save & Activate"
+6. Next scoring run uses new prompt
+```
+
+### Add New Pre-Filter Keyword
+
+```
+Currently requires SQL:
+INSERT INTO prefilter_keywords 
+(keyword, keyword_type, tier, category, weight)
+VALUES ('Claude API', 'include', 'silver', 'tool', 50);
+
+Future: Add via console UI
+```
+
+### Track New Feature Development
+
+```
+1. Go to Backlog tab
+2. Title: "Add email newsletter automation"
+3. Description: "Integrate ConvertKit API..."
+4. Category: Newsletter Engine
+5. Priority: High
+6. Click "Add Task"
+```
+
+### Check Why Pipeline Failed
+
+```
+1. Check notification bell (red if alerts)
+2. Go to Operations tab
+3. Find failed operation (red badge)
+4. Read error message
+5. Check details column for stack trace
+```
+
+---
+
+## 🎨 Color Coding
+
+### Priority Colors
+- 🔴 **Red (#ff4444)** = Critical priority / Errors
+- 🟠 **Orange (#ff8800)** = High priority / Warnings  
+- 🟡 **Yellow (#ffcc00)** = Medium priority / Success
+- ⚪ **Gray (#94a3b8)** = Low priority / Info
+
+### Status Badges
+- 🟢 **Green/Yellow Badge** = Success / Enabled / Passed
+- 🔴 **Red Badge** = Failed / Disabled / Error
+
+---
+
+## 📊 Chart Types
+
+| Chart | Type | Location | Purpose |
+|-------|------|----------|---------|
+| Daily Discovery | Line | Dashboard | Track volume over 7 days |
+| Pre-Filter Rate | Pie | Dashboard | Pass/fail distribution |
+| Score Distribution | Bar | Dashboard | Quality histogram |
+| Top Keywords | Bar (horizontal) | Dashboard | Most matched keywords |
+| Ops Success Rate | Line | Dashboard | Pipeline health trend |
+
+**All charts update when you click "Refresh Data"**
+
+---
+
+## 🔑 Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+R` | Refresh browser (reload console) |
+| `F5` | Refresh browser (reload console) |
+| `F12` | Open browser dev tools (debug) |
+| `Ctrl+Shift+I` | Open browser inspector |
+
+**Tab Navigation:** Click tab names (no keyboard shortcuts yet)
+
+---
+
+## 💾 Data Refresh Rates
+
+| Component | Refresh Rate | Manual Refresh |
+|-----------|--------------|----------------|
+| Alerts | Every 30s | Click bell icon |
+| Dashboard Charts | On demand | Click "Refresh Data" |
+| Discovery Stats | On demand | Switch to tab |
+| Operations Log | On demand | Click "Refresh" |
+| All Other Tabs | On demand | Switch to tab |
+
+---
+
+## 🐛 Quick Troubleshooting
+
+### Console won't load
+```powershell
+# Check server is running
+Get-Process -Name "node"
+
+# Restart server
+.\stop-console.ps1
+.\start-console.ps1
+```
+
+### Data not showing
+```
+1. Open browser console (F12)
+2. Check for red errors
+3. Verify API calls return 200 status
+4. Check database path in server.js
+```
+
+### Charts not rendering
+```
+1. Wait 3-5 seconds after page load
+2. Click "Refresh Data" button
+3. Check browser console for Chart.js errors
+4. Verify Chart.js CDN loaded (Network tab)
+```
+
+### Slow performance
+```
+1. Close unused tabs in console
+2. Reduce operations log query limit
+3. Clear browser cache
+4. Restart console server
+```
+
+---
+
+## 📞 Support Checklist
+
+**Before asking for help, check:**
+- [ ] Server is running (`Get-Process -Name "node"`)
+- [ ] Database exists at correct path
+- [ ] Browser console shows no errors (F12)
+- [ ] API endpoints return 200 status (Network tab)
+- [ ] All dependencies installed (`npm install`)
+- [ ] Using correct URL: `http://localhost:8080/console.html`
+
+**To report issue, provide:**
+- Browser console screenshot (F12)
+- Server.js console output
+- Database path and size
+- Which tab/feature not working
+
+---
+
+## 📝 Daily Checklist
+
+**Morning (5 min):**
+- [ ] Start console (`.\start-console.ps1`)
+- [ ] Check notification bell (address red alerts)
+- [ ] Review dashboard stats (today's numbers)
+- [ ] Check operations log (no failures overnight)
+
+**During Day (as needed):**
+- [ ] Monitor discovery performance
+- [ ] Adjust pre-filter if needed
+- [ ] Update backlog tasks
+- [ ] Test prompt iterations
+
+**Evening (2 min):**
+- [ ] Move completed tasks to Done
+- [ ] Add tomorrow's tasks
+- [ ] Copy restart prompt if ending session
+
+---
+
+## 🎯 Performance Targets
+
+| Metric | Target | Amber | Red |
+|--------|--------|-------|-----|
+| Discovery Volume | 500-900/day | 300-500 | <300 |
+| Pre-Filter Pass | 80-120/day | 50-80 | <50 |
+| PMO Score Avg | 55-70 | 45-55 | <45 |
+| High Quality (≥70) | 15-30/day | 10-15 | <10 |
+| Ops Success Rate | >90% | 80-90% | <80% |
+| Avg Op Duration | <30s | 30-60s | >60s |
+
+---
+
+## 🔐 Security Notes
+
+- Console runs on localhost only (not exposed to internet)
+- No authentication (localhost trusted)
+- Database is local SQLite file
+- API has no rate limiting (local use)
+
+**Don't:**
+- Expose port 8080 to internet
+- Share console URL outside localhost
+- Run on public networks without VPN
+
+---
+
+Print this and keep it by your desk! 📋

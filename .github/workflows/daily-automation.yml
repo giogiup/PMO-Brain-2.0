@@ -1,0 +1,159 @@
+# ============================================================================
+# SmartPMO.ai Daily Automation - GitHub Actions
+# ============================================================================
+# Runs daily at 5:00 AM SAST (3:00 AM UTC)
+# Discovers articles, scores with AI, generates cards, deploys to website
+# ============================================================================
+
+name: SmartPMO Daily Automation
+
+on:
+  schedule:
+    # 5:00 AM SAST = 3:00 AM UTC (SAST is UTC+2)
+    - cron: '0 3 * * *'
+  
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      skip_deploy:
+        description: 'Skip git deploy step'
+        required: false
+        default: 'false'
+
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ======================================================================
+      # SETUP
+      # ======================================================================
+      
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Full history for git operations
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          cd automation
+          npm install
+      
+      # ======================================================================
+      # RUN PIPELINE
+      # ======================================================================
+      
+      - name: Run daily pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          THE_NEWS_API_KEY: ${{ secrets.THE_NEWS_API_KEY }}
+        run: |
+          cd automation
+          node run-daily-pipeline.js
+      
+      # ======================================================================
+      # DEPLOY
+      # ======================================================================
+      
+      - name: Commit and push changes
+        if: ${{ github.event.inputs.skip_deploy != 'true' }}
+        run: |
+          # Configure git
+          git config user.name "SmartPMO Bot"
+          git config user.email "bot@smartpmo.ai"
+          
+          # Check for changes
+          if git diff --quiet website/api/daily-cards.json; then
+            echo "No changes to deploy"
+            exit 0
+          fi
+          
+          # Commit and push
+          git add website/api/daily-cards.json
+          git commit -m "🤖 Daily cards update - $(date +'%Y-%m-%d')"
+          git push
+      
+      # ======================================================================
+      # NOTIFICATIONS
+      # ======================================================================
+      
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Daily automation completed successfully"
+          echo "Cards published to smartpmo.ai"
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '❌ Daily Automation Failed - ' + new Date().toISOString().split('T')[0],
+              body: 'The daily automation pipeline failed. Check the workflow logs for details.\n\n' +
+                    'Workflow run: ' + context.serverUrl + '/' + context.repo.owner + '/' + 
+                    context.repo.repo + '/actions/runs/' + context.runId,
+              labels: ['automation', 'bug']
+            })
+
+# ============================================================================
+# MANUAL TEST WORKFLOW (Run on demand)
+# ============================================================================
+
+name: Test Automation (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: 'Steps to run (comma-separated: discovery,scoring,fetch,keywords,cards,deploy)'
+        required: false
+        default: 'discovery,scoring,fetch,keywords,cards'
+
+jobs:
+  test-automation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd automation
+          npm install
+      
+      - name: Run test pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+        run: |
+          cd automation
+          
+          # Parse steps input and add skip flags
+          STEPS="${{ github.event.inputs.steps }}"
+          FLAGS=""
+          
+          if [[ ! "$STEPS" =~ "discovery" ]]; then FLAGS="$FLAGS --skip-discovery"; fi
+          if [[ ! "$STEPS" =~ "scoring" ]]; then FLAGS="$FLAGS --skip-scoring"; fi
+          if [[ ! "$STEPS" =~ "fetch" ]]; then FLAGS="$FLAGS --skip-fetch"; fi
+          if [[ ! "$STEPS" =~ "keywords" ]]; then FLAGS="$FLAGS --skip-keywords"; fi
+          if [[ ! "$STEPS" =~ "cards" ]]; then FLAGS="$FLAGS --skip-cards"; fi
+          if [[ ! "$STEPS" =~ "deploy" ]]; then FLAGS="$FLAGS --skip-deploy"; fi
+          
+          node run-daily-pipeline.js --test $FLAGS

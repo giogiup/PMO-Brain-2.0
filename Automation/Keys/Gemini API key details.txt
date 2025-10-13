@@ -1,0 +1,13 @@
+Gemini API key details
+API Key
+
+AIzaSyD-FedvNSZ_Im4SdL9Ok4uWC2S6Gzx-Sqs
+
+Name
+SmartPMOai_API_gemini_key
+Project name
+projects/545030652635
+Project number
+545030652635
+
+Jina API Key = jina_6f2648e1f91b4bec917383b3c1b912cbcoKU8dTJUfGHY4wpXSfyynLib5Z_

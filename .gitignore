@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+
+# Database files (keep structure, not data)
+*.db
+*.sqlite
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Shortcuts
+*.lnk
+
+# Old/backup folders
+zzz*/
+*backup/
+
+# IDE
+.vscode/
+.idea/

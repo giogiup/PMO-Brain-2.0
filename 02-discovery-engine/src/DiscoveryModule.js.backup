@@ -1,0 +1,76 @@
+// Fixed DiscoveryModule.js - Connect to actual discovery engine
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+class DiscoveryModule {
+  constructor() {
+    this.discoveryEnginePath = path.join(__dirname, 'discovery-engine.js');
+    this.dataPath = path.join(__dirname, '../../data');
+  }
+
+  async findArticles() {
+    try {
+      // Check for recent discovery files
+      const discoveryFiles = fs.readdirSync(this.dataPath)
+        .filter(file => file.startsWith('discovery-discovery-'))
+        .sort()
+        .reverse(); // Most recent first
+
+      if (discoveryFiles.length > 0) {
+        const latestFile = path.join(this.dataPath, discoveryFiles[0]);
+        const discoveryData = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+        
+        console.log(`Using discovery data from: ${discoveryFiles[0]}`);
+        console.log(`Found ${discoveryData.articles?.length || 0} articles`);
+        
+        return discoveryData.articles || [];
+      } else {
+        console.log('No recent discovery data found, returning empty array');
+        return [];
+      }
+      
+    } catch (error) {
+      console.error('Error loading discovery data:', error);
+      return [];
+    }
+  }
+
+  // Optional: Trigger new discovery run
+  async runDiscovery() {
+    return new Promise((resolve, reject) => {
+      console.log('Starting discovery engine...');
+      
+      const discoveryProcess = spawn('node', [this.discoveryEnginePath], {
+        cwd: path.dirname(this.discoveryEnginePath)
+      });
+
+      let output = '';
+      
+      discoveryProcess.stdout.on('data', (data) => {
+        output += data.toString();
+        console.log(data.toString());
+      });
+
+      discoveryProcess.stderr.on('data', (data) => {
+        console.error(data.toString());
+      });
+
+      discoveryProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve(output);
+        } else {
+          reject(new Error(`Discovery engine exited with code ${code}`));
+        }
+      });
+
+      // Kill after 30 seconds to prevent hanging
+      setTimeout(() => {
+        discoveryProcess.kill();
+        resolve('Discovery engine timeout - using existing data');
+      }, 30000);
+    });
+  }
+}
+
+module.exports = DiscoveryModule;

@@ -1,0 +1,192 @@
+# 🚀 SmartPMO.ai Development Session - Restart Prompt
+
+## 📊 **Current Project Status**
+
+### **What We're Building**
+SmartPMO.ai - An AI-powered newsletter that curates AI+PMO content by:
+1. Discovering 1,500+ daily AI articles across the web
+2. Scoring them for PMO relevance (Direct vs Inferred)
+3. Delivering top 10 insights daily via newsletter
+
+### **Core Mission** 
+Find ONLY content published in the **last 24 hours** - not recycling old content. This is the #1 priority since day one.
+
+---
+
+## 🗄️ **Database & System Architecture**
+
+### **Database Location**
+`D:\PMO-Brain-2.0-Modular\02-discovery-engine\pmo_insights.db`
+
+**Current Status:**
+- Total articles: 758
+- Latest entry: Oct 7, 2025 at 5:07 AM
+- **Oct 8 data NOT imported yet** (145 articles discovered but not in DB)
+
+### **Key Tables**
+- `daily_insights` - Raw discovered articles (758 total)
+- `newsletter_content` - Scored & analyzed articles
+- `article_keywords` - Extracted keywords
+- `daily_runs` - Discovery run tracking
+- `backlog` - User-submitted articles queue
+
+---
+
+## 🔧 **Immediate Issue to Fix**
+
+### **Problem: Oct 8 Import Failed**
+- Discovery ran successfully: Found 145 articles (120 RSS + 26 Google)
+- Import script ran but **database not updated**
+- Root cause: **Filename mismatch**
+  - Script expects: `discovery-2025-10-08.json`
+  - Actual file: `discovery-1759896259164.json` (timestamp format)
+
+### **Fix Required**
+```bash
+cd D:\PMO-Brain-2.0-Modular\02-discovery-engine\staging
+ren discovery-1759896259164.json discovery-2025-10-08.json
+cd ..
+node import-discovery.js
+```
+
+**Also added to import script:**
+```javascript
+await db.close(); // Commits transaction
+```
+
+---
+
+## 🎯 **Features Discussed This Session**
+
+### **1. Content Volume Research - COMPLETED** ✅
+**Real numbers (not 30K exaggeration):**
+- Total daily AI content: ~1,500 substantive pieces
+- PMO-relevant: ~120 pieces (8% of total)
+  - Direct PMO: 8-10 pieces/day
+  - Inferred PMO: 110-120 pieces/day
+- SmartPMO.ai processes: ~600 sources daily
+
+**Recommended tagline:**
+> "From 1,500+ daily AI developments → We find the 10 that matter to your PMO"
+
+### **2. Monthly PMO Trends Chart - READY TO BUILD** 📊
+**Specifications:**
+- **Data**: Rolling 6-month window, updates daily
+- **Visual**: Horizontal bar chart by PMBOK area (Risk, Schedule, Resource, etc.)
+- **Tech**: Chart.js or Recharts
+- **Query**: Last 6 months, high-scoring articles (≥7/10) grouped by PMO area
+- **Features**: 
+  - LinkedIn share button
+  - Download PNG
+  - View details drill-down
+
+### **3. LinkedIn Sharing - CLARIFIED** 🔗
+**How it works:**
+- **NO API needed** - Use LinkedIn Share Dialog
+- Click button → Opens LinkedIn with pre-filled URL
+- LinkedIn auto-generates preview from Open Graph tags
+- User adds commentary and posts
+- **Simple URL format**: `https://www.linkedin.com/sharing/share-offsite/?url={your-url}`
+
+### **4. Slack Integration - PLANNED** 💬
+**TLDR:**
+- User installs Slack app/bot
+- Daily 9am automated message to chosen channel
+- Shows top 3-5 insights with scores + links
+- **Tech needed**: 
+  - Slack Incoming Webhook (simple) OR Slack Bot API
+  - Scheduled task (cron/GitHub Actions)
+- **Complexity**: Medium
+
+### **5. Article Submission Feature - DESIGNED** 📝
+**Instead of browser extension:**
+- User pastes article URL into form
+- AI scores in real-time (~$0.02-0.05 per analysis)
+- If score ≥ 7.0/10 → Added to tomorrow's newsletter
+- If score < 7.0 → Show score, explain why not included
+- **Throttling**: 5 submissions/day (free), 20/day (subscribers)
+
+---
+
+## 📋 **Feature Priority Backlog**
+
+### **CRITICAL - This Week**
+1. ✅ Fix Oct 8 import (filename issue)
+2. ✅ Update website tagline (1,500 not 30K)
+3. 🔄 Build PMO Trends Chart (6-month rolling view)
+4. 🔄 Create FAQ page explaining scoring methodology
+
+### **HIGH - This Month**
+5. 🔄 LinkedIn share integration (Open Graph + Share Dialog)
+6. 🔄 Article submission form with real-time scoring
+7. 🔄 PMO maturity assessment quiz
+
+### **MEDIUM - Next Quarter**
+8. 🔄 Slack/Teams integration
+9. 🔄 Case study library template
+10. 🔄 Weekly AI tool spotlight section
+
+### **LONG-TERM - 6+ Months**
+11. 🔮 Browser extension (paused - using submission form instead)
+12. 🔮 AI chat assistant for insights
+13. 🔮 Enterprise API for PMO software integration
+
+---
+
+## 🔢 **Key Numbers Reference**
+
+### **Daily Content Funnel**
+```
+1,500 AI pieces published daily (all sources)
+    ↓
+600 pieces monitored by SmartPMO.ai
+    ↓
+120 PMO-relevant (score ≥5/10)
+    ↓
+25 high-quality (score ≥8/10)
+    ↓
+10 delivered in newsletter
+```
+
+### **Value Proposition**
+- Saves 3+ hours/week for PMO professionals
+- Finds "hidden gems" - AI tools not marketed to PMO
+- 24-hour freshness guarantee
+
+---
+
+## 🛠️ **Tech Stack**
+
+- **Discovery**: Node.js + RSS feeds + Google Custom Search API
+- **Database**: SQLite (pmo_insights.db)
+- **Scoring**: Claude API (Anthropic)
+- **Website**: HTML/CSS/JS (GitHub Pages planned)
+- **Charts**: Chart.js or Recharts (React)
+- **Newsletter**: ConvertKit (planned)
+
+---
+
+## 📂 **File Structure**
+```
+D:\PMO-Brain-2.0-Modular\
+├── 02-discovery-engine/
+│   ├── pmo_insights.db (MAIN DATABASE)
+│   ├── staging/ (discovery JSON files)
+│   ├── import-discovery.js (needs db.close() fix)
+│   └── discovery-2025-10-08.log
+├── 05-newsletter-engine/
+└── website/ (future)
+```
+
+---
+
+## 🎯 **Next Immediate Actions**
+
+1. **Import Oct 8 data** (rename file + run import)
+2. **Verify in database** (should show 758 + 145 = 903 total)
+3. **Build PMO Trends Chart** when ready
+4. **Update website tagline** to accurate 1,500/day number
+
+---
+
+**Resume from:** Fixing Oct 8 import, then ready to build PMO Trends Chart or any other feature you choose.

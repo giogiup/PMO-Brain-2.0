@@ -1,0 +1,255 @@
+[2025-10-08T06:10:18.021Z] 
+================================================================================
+[2025-10-08T06:10:18.022Z] DISCOVERY RUN: 2025-10-08 08:10:17
+[2025-10-08T06:10:18.022Z] ================================================================================
+[2025-10-08T06:10:18.022Z] RSS Feeds: 85
+[2025-10-08T06:10:18.022Z] GDELT Keywords: 8
+[2025-10-08T06:10:18.022Z] Google Queries: 20
+[2025-10-08T06:10:18.022Z] TheNewsAPI: DISABLED
+[2025-10-08T06:10:18.022Z] Google API: ENABLED
+[2025-10-08T06:10:18.022Z] 
+[2025-10-08T06:10:18.034Z] 📡 RSS FEEDS (85 sources):
+[2025-10-08T06:10:18.324Z]   ✓ TechCrunch AI: 8 articles
+[2025-10-08T06:10:18.747Z]   ✓ Ars Technica: 12 articles
+[2025-10-08T06:10:18.838Z]   ✓ MIT Tech Review: 5 articles
+[2025-10-08T06:10:19.780Z]   ✗ AI News: Status code 403
+[2025-10-08T06:10:20.363Z]   ✓ Wired AI: 2 articles
+[2025-10-08T06:10:21.349Z]   ✓ Mashable Tech: 67 articles
+[2025-10-08T06:10:22.998Z]   ✓ Engadget: 50 articles
+[2025-10-08T06:10:24.165Z]   ✓ Gizmodo: 20 articles
+[2025-10-08T06:10:25.553Z]   ✓ Next Big Future: 6 articles
+[2025-10-08T06:10:26.393Z]   ✓ Singularity Hub: 1 articles
+[2025-10-08T06:10:27.934Z]   ✓ IEEE Spectrum: 3 articles
+[2025-10-08T06:10:28.889Z]   ✓ Tech Xplore: 30 articles
+[2025-10-08T06:10:31.812Z]   ✓ AWS ML Blog: 2 articles
+[2025-10-08T06:10:32.071Z]   ✓ Facebook Engineering: 1 articles
+[2025-10-08T06:10:37.934Z]   ✓ Towards Data Science: 2 articles
+[2025-10-08T06:10:38.064Z]   ✓ Analytics India: 14 articles
+[2025-10-08T06:10:38.343Z]   ✓ The Register: 19 articles
+[2025-10-08T06:10:40.234Z]   ✓ AI Business: 4 articles
+[2025-10-08T06:10:46.611Z]   ✓ SiliconANGLE: 23 articles
+[2025-10-08T06:10:48.340Z]   ✗ MarkTechPost: Status code 403
+[2025-10-08T06:10:49.197Z]   ✓ Robotics Business: 4 articles
+[2025-10-08T06:10:51.132Z]   ✓ Tech Monitor: 1 articles
+[2025-10-08T06:10:52.948Z]   ✓ Inside Big Data: 3 articles
+[2025-10-08T06:10:54.325Z]   ✓ Machine Learning Mastery: 1 articles
+[2025-10-08T06:10:54.364Z]   ✓ KDnuggets: 3 articles
+[2025-10-08T06:10:55.413Z]   ✓ Analytics Vidhya: 3 articles
+[2025-10-08T06:10:58.484Z]   ✓ LessWrong AI: 10 articles
+[2025-10-08T06:11:02.094Z]   ✓ Partnership on AI: 1 articles
+[2025-10-08T06:11:03.230Z]   ✓ MIT Sloan Review: 1 articles
+[2025-10-08T06:11:03.837Z]   ✓ Wharton Knowledge: 4 articles
+[2025-10-08T06:11:04.744Z]   ✓ Capgemini: 4 articles
+[2025-10-08T06:11:05.097Z]   ✓ CNBC Tech: 9 articles
+[2025-10-08T06:11:06.368Z]   ✓ Google Blog: 6 articles
+[2025-10-08T06:11:07.189Z]   ✗ Amazon Science: Status code 404
+[2025-10-08T06:11:07.708Z]   ✓ IMD Business: 5 articles
+[2025-10-08T06:11:09.706Z]   ✗ HotPMO: Status code 403
+[2025-10-08T06:11:11.932Z]   ✗ Project Management: Status code 403
+[2025-10-08T06:11:28.680Z]   ✗ Practical PM: Request timed out after 10000ms
+[2025-10-08T06:11:31.589Z]   ✗ Agile Alliance: Status code 403
+[2025-10-08T06:11:37.042Z]   ✗ Mike Cohn Blog: Status code 404
+[2025-10-08T06:11:45.987Z]   ✓ Lean Enterprise Institute: 1 articles
+[2025-10-08T06:11:53.588Z]   ✗ International PM Association: Status code 403
+[2025-10-08T06:11:54.142Z]   ✗ Microsoft 365 Developer: Status code 404
+[2025-10-08T06:12:00.912Z]   ✓ ZDNet AI: 20 articles
+[2025-10-08T06:12:00.972Z]   ✗ IT Business Edge: Status code 404
+[2025-10-08T06:12:03.418Z]   ✓ IT Pro: 8 articles
+[2025-10-08T06:12:05.308Z]   ✓ Fast Company: 20 articles
+[2025-10-08T06:12:06.659Z]   ✓ Inc.com: 27 articles
+[2025-10-08T06:12:07.320Z]   Summary: 74 feeds OK, 11 errors, 400 total articles
+[2025-10-08T06:12:07.322Z] Total: 400 articles
+
+[2025-10-08T06:12:07.327Z] 🌍 GDELT DOC API (8 keywords):
+[2025-10-08T06:12:07.328Z]   Searching: "PMO artificial intelligence"
+[2025-10-08T06:12:08.908Z]     ✓ 4 results
+[2025-10-08T06:12:09.920Z]   Searching: "AI project management"
+[2025-10-08T06:12:10.266Z]     ✗ No results
+[2025-10-08T06:12:11.269Z]   Searching: "AI project portfolio"
+[2025-10-08T06:12:11.612Z]     ✗ No results
+[2025-10-08T06:12:12.628Z]   Searching: "AI governance enterprise"
+[2025-10-08T06:12:12.976Z]     ✗ No results
+[2025-10-08T06:12:13.987Z]   Searching: "AI workflow automation"
+[2025-10-08T06:12:14.322Z]     ✗ No results
+[2025-10-08T06:12:15.334Z]   Searching: "AI decision making enterprise"
+[2025-10-08T06:12:15.669Z]     ✗ No results
+[2025-10-08T06:12:16.744Z]   Searching: "AI productivity tools"
+[2025-10-08T06:12:17.087Z]     ✗ No results
+[2025-10-08T06:12:18.102Z]   Searching: "AI business intelligence"
+[2025-10-08T06:12:18.437Z]     ✗ No results
+[2025-10-08T06:12:19.453Z] Total: 4 articles
+
+[2025-10-08T06:12:19.454Z] 📰 THENEWSAPI: SKIPPED (no API key)
+
+[2025-10-08T06:12:19.455Z] 🔎 GOOGLE SEARCH (20 queries):
+[2025-10-08T06:12:19.457Z]   Query: ""latest AI tools 2025" OR "new artificial intelligence apps" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:20.039Z]     ✗ No results
+[2025-10-08T06:12:21.146Z]   Query: ""AI automation platforms" OR "AI workflow automation tools" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:21.518Z]     ✓ 10 results
+[2025-10-08T06:12:22.631Z]   Query: ""AI productivity tools" OR "AI workplace efficiency apps" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:23.040Z]     ✓ 10 results
+[2025-10-08T06:12:24.143Z]   Query: ""AI SaaS launches" OR "new AI SaaS platform" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:24.476Z]     ✗ No results
+[2025-10-08T06:12:25.581Z]   Query: ""AI project portfolio management" -whitepaper -thesis after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:25.912Z]     ✗ No results
+[2025-10-08T06:12:27.022Z]   Query: ""AI project scheduling optimization" OR "AI project planning software" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:27.407Z]     ✗ No results
+[2025-10-08T06:12:28.519Z]   Query: ""AI project risk assessment tools" OR "AI risk forecasting PMO" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:28.815Z]     ✗ No results
+[2025-10-08T06:12:29.928Z]   Query: ""AI project analytics dashboards" OR "AI PMO reporting tools" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:30.240Z]     ✗ No results
+[2025-10-08T06:12:31.345Z]   Query: ""AI project automation workflows" OR "AI PMO automation" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:31.664Z]     ✗ No results
+[2025-10-08T06:12:32.774Z]   Query: ""AI project management platforms 2025" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:33.104Z]     ✗ No results
+[2025-10-08T06:12:34.207Z]   Query: ""AI in portfolio governance" OR "AI-driven compliance monitoring" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:34.504Z]     ✗ No results
+[2025-10-08T06:12:38.241Z]   Query: ""AI workforce allocation tools" OR "AI resource scheduling enterprise" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:38.601Z]     ✗ No results
+[2025-10-08T06:12:39.711Z]   Query: ""AI project risk forecasting" OR "machine learning uncertainty modeling" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:40.024Z]     ✗ No results
+[2025-10-08T06:12:41.131Z]   Query: ""AI stakeholder sentiment analysis enterprise" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:41.430Z]     ✗ No results
+[2025-10-08T06:12:42.539Z]   Query: ""AI workflow orchestration enterprise" OR "AI task automation" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:43.111Z]     ✓ 4 results
+[2025-10-08T06:12:44.217Z]   Query: ""AI organizational change management" OR "AI transformation playbook" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:44.511Z]     ✗ No results
+[2025-10-08T06:12:45.624Z]   Query: ""AI enterprise adoption trends" OR "AI digital transformation" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:46.028Z]     ✓ 10 results
+[2025-10-08T06:12:47.137Z]   Query: ""AI-driven decision support systems enterprise" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:47.476Z]     ✗ No results
+[2025-10-08T06:12:48.597Z]   Query: ""AI-powered dashboards enterprise" OR "AI business dashboards" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:48.981Z]     ✗ No results
+[2025-10-08T06:12:50.094Z]   Query: ""AI-powered reporting dashboards enterprise" after:2025-10-07 before:2025-10-08"
+[2025-10-08T06:12:50.404Z]     ✗ No results
+[2025-10-08T06:12:51.517Z]   Summary: 4 queries OK, 0 errors
+[2025-10-09T14:27:51.044Z] 
+================================================================================
+[2025-10-09T14:27:51.044Z] DISCOVERY RUN: 2025-10-09 16:27:51
+[2025-10-09T14:27:51.044Z] ================================================================================
+[2025-10-09T14:27:51.044Z] RSS Feeds: 85
+[2025-10-09T14:27:51.044Z] GDELT Keywords: 8
+[2025-10-09T14:27:51.044Z] Google Queries: 20
+[2025-10-09T14:27:51.044Z] TheNewsAPI: DISABLED
+[2025-10-09T14:27:51.044Z] Google API: ENABLED
+[2025-10-09T14:27:51.044Z] 
+[2025-10-09T14:27:51.045Z] 📡 RSS FEEDS (85 sources):
+[2025-10-09T14:27:51.179Z]   ✓ TechCrunch AI: 10 articles
+[2025-10-09T14:27:51.443Z]   ✓ Ars Technica: 16 articles
+[2025-10-09T14:27:51.656Z]   ✓ MIT Tech Review: 3 articles
+[2025-10-09T14:27:53.405Z]   ✗ AI News: Status code 403
+[2025-10-09T14:27:54.171Z]   ✓ Wired AI: 3 articles
+[2025-10-09T14:27:55.886Z]   ✓ Mashable Tech: 41 articles
+[2025-10-09T14:27:58.271Z]   ✓ Gizmodo: 20 articles
+[2025-10-09T14:27:58.955Z]   ✓ Next Big Future: 7 articles
+[2025-10-09T14:27:59.792Z]   ✓ Singularity Hub: 1 articles
+[2025-10-09T14:28:02.273Z]   ✓ IEEE Spectrum: 3 articles
+[2025-10-09T14:28:03.221Z]   ✓ Tech Xplore: 27 articles
+[2025-10-09T14:28:05.792Z]   ✓ NVIDIA Blog: 2 articles
+[2025-10-09T14:28:06.654Z]   ✓ AWS ML Blog: 2 articles
+[2025-10-09T14:28:13.248Z]   ✓ Towards Data Science: 2 articles
+[2025-10-09T14:28:15.041Z]   ✓ Analytics India: 17 articles
+[2025-10-09T14:28:15.314Z]   ✓ The Register: 22 articles
+[2025-10-09T14:28:16.435Z]   ✓ AI Business: 6 articles
+[2025-10-09T14:28:26.597Z]   ✓ TechNode: 6 articles
+[2025-10-09T14:28:28.295Z]   ✓ SiliconANGLE: 27 articles
+[2025-10-09T14:28:30.221Z]   ✗ MarkTechPost: Status code 403
+[2025-10-09T14:28:32.116Z]   ✓ Robotics Business: 3 articles
+[2025-10-09T14:28:33.668Z]   ✓ Emerj: 1 articles
+[2025-10-09T14:28:34.102Z]   ✓ Tech Monitor: 1 articles
+[2025-10-09T14:28:35.985Z]   ✓ Inside Big Data: 2 articles
+[2025-10-09T14:28:38.259Z]   ✓ Machine Learning Mastery: 1 articles
+[2025-10-09T14:28:38.787Z]   ✓ KDnuggets: 1 articles
+[2025-10-09T14:28:40.762Z]   ✓ Analytics Vidhya: 3 articles
+[2025-10-09T14:28:42.734Z]   ✓ AI Alignment Forum: 2 articles
+[2025-10-09T14:28:44.800Z]   ✓ LessWrong AI: 10 articles
+[2025-10-09T14:28:51.293Z]   ✓ MIT Sloan Review: 1 articles
+[2025-10-09T14:29:02.608Z]   ✗ Capgemini: Request timed out after 10000ms
+[2025-10-09T14:29:12.610Z]   ✗ CNBC Tech: Request timed out after 10000ms
+[2025-10-09T14:29:22.620Z]   ✗ Microsoft News: Request timed out after 10000ms
+[2025-10-09T14:29:27.141Z]   ✓ Google Blog: 15 articles
+[2025-10-09T14:29:28.490Z]   ✗ Amazon Science: Status code 404
+[2025-10-09T14:29:39.222Z]   ✓ IMD Business: 2 articles
+[2025-10-09T14:29:41.932Z]   ✗ HotPMO: Status code 403
+[2025-10-09T14:29:45.101Z]   ✗ Project Management: Status code 403
+[2025-10-09T14:29:51.030Z]   ✓ PM Study Circle: 4 articles
+[2025-10-09T14:30:03.811Z]   ✗ Practical PM: Request timed out after 10000ms
+[2025-10-09T14:30:08.255Z]   ✗ Agile Alliance: Status code 403
+[2025-10-09T14:30:10.795Z]   ✓ Scrum.org: 4 articles
+[2025-10-09T14:30:14.039Z]   ✗ Mike Cohn Blog: Status code 404
+[2025-10-09T14:30:27.636Z]   ✓ Lean Enterprise Institute: 1 articles
+[2025-10-09T14:30:36.433Z]   ✗ International PM Association: Status code 403
+[2025-10-09T14:30:38.179Z]   ✗ Microsoft 365 Developer: Status code 404
+[2025-10-09T14:30:46.764Z]   ✓ Enterprise AI: 5 articles
+[2025-10-09T14:30:48.333Z]   ✓ ZDNet AI: 20 articles
+[2025-10-09T14:30:49.557Z]   ✗ IT Business Edge: Status code 404
+[2025-10-09T14:30:50.857Z]   ✓ Datanami: 1 articles
+[2025-10-09T14:30:52.613Z]   ✓ IT Pro: 5 articles
+[2025-10-09T14:30:54.813Z]   ✓ Fast Company: 20 articles
+[2025-10-09T14:30:56.214Z]   ✓ Inc.com: 33 articles
+[2025-10-09T14:30:56.975Z]   Summary: 71 feeds OK, 14 errors, 350 total articles
+[2025-10-09T14:30:56.976Z] Total: 350 articles
+
+[2025-10-09T14:30:56.976Z] 🌍 GDELT DOC API (8 keywords):
+[2025-10-09T14:30:56.977Z]   Searching: "PMO artificial intelligence"
+[2025-10-09T14:31:00.571Z]     ✗ No results
+[2025-10-09T14:31:01.582Z]   Searching: "AI project management"
+[2025-10-09T14:31:01.921Z]     ✗ No results
+[2025-10-09T14:31:02.934Z]   Searching: "AI project portfolio"
+[2025-10-09T14:31:03.267Z]     ✗ No results
+[2025-10-09T14:31:04.275Z]   Searching: "AI governance enterprise"
+[2025-10-09T14:31:04.606Z]     ✗ No results
+[2025-10-09T14:31:05.617Z]   Searching: "AI workflow automation"
+[2025-10-09T14:31:05.954Z]     ✗ No results
+[2025-10-09T14:31:06.962Z]   Searching: "AI decision making enterprise"
+[2025-10-09T14:31:07.294Z]     ✗ No results
+[2025-10-09T14:31:08.298Z]   Searching: "AI productivity tools"
+[2025-10-09T14:31:08.627Z]     ✗ No results
+[2025-10-09T14:31:09.629Z]   Searching: "AI business intelligence"
+[2025-10-09T14:31:09.954Z]     ✗ No results
+[2025-10-09T14:31:10.964Z] Total: 0 articles
+
+[2025-10-09T14:31:10.965Z] 📰 THENEWSAPI: SKIPPED (no API key)
+
+[2025-10-09T14:31:10.966Z] 🔎 GOOGLE SEARCH (20 queries):
+[2025-10-09T14:31:10.966Z]   Query: ""latest AI tools 2025" OR "new artificial intelligence apps" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:11.504Z]     ✓ 1 results
+[2025-10-09T14:31:12.618Z]   Query: ""AI automation platforms" OR "AI workflow automation tools" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:12.989Z]     ✓ 8 results
+[2025-10-09T14:31:14.105Z]   Query: ""AI productivity tools" OR "AI workplace efficiency apps" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:14.499Z]     ✓ 10 results
+[2025-10-09T14:31:15.601Z]   Query: ""AI SaaS launches" OR "new AI SaaS platform" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:15.930Z]     ✗ No results
+[2025-10-09T14:31:17.033Z]   Query: ""AI project portfolio management" -whitepaper -thesis after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:17.348Z]     ✗ No results
+[2025-10-09T14:31:18.455Z]   Query: ""AI project scheduling optimization" OR "AI project planning software" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:18.769Z]     ✗ No results
+[2025-10-09T14:31:19.885Z]   Query: ""AI project risk assessment tools" OR "AI risk forecasting PMO" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:20.198Z]     ✗ No results
+[2025-10-09T14:31:21.302Z]   Query: ""AI project analytics dashboards" OR "AI PMO reporting tools" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:21.608Z]     ✗ No results
+[2025-10-09T14:31:22.711Z]   Query: ""AI project automation workflows" OR "AI PMO automation" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:23.042Z]     ✗ No results
+[2025-10-09T14:31:24.149Z]   Query: ""AI project management platforms 2025" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:24.548Z]     ✗ No results
+[2025-10-09T14:31:25.664Z]   Query: ""AI in portfolio governance" OR "AI-driven compliance monitoring" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:26.021Z]     ✓ 2 results
+[2025-10-09T14:31:27.129Z]   Query: ""AI workforce allocation tools" OR "AI resource scheduling enterprise" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:27.450Z]     ✗ No results
+[2025-10-09T14:31:28.565Z]   Query: ""AI project risk forecasting" OR "machine learning uncertainty modeling" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:28.897Z]     ✗ No results
+[2025-10-09T14:31:30.006Z]   Query: ""AI stakeholder sentiment analysis enterprise" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:30.300Z]     ✗ No results
+[2025-10-09T14:31:31.413Z]   Query: ""AI workflow orchestration enterprise" OR "AI task automation" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:31.744Z]     ✓ 2 results
+[2025-10-09T14:31:32.855Z]   Query: ""AI organizational change management" OR "AI transformation playbook" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:33.175Z]     ✓ 2 results
+[2025-10-09T14:31:34.277Z]   Query: ""AI enterprise adoption trends" OR "AI digital transformation" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:34.663Z]     ✓ 10 results
+[2025-10-09T14:31:35.777Z]   Query: ""AI-driven decision support systems enterprise" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:36.071Z]     ✗ No results
+[2025-10-09T14:31:37.187Z]   Query: ""AI-powered dashboards enterprise" OR "AI business dashboards" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:37.487Z]     ✗ No results
+[2025-10-09T14:31:38.593Z]   Query: ""AI-powered reporting dashboards enterprise" after:2025-10-08 before:2025-10-09"
+[2025-10-09T14:31:38.896Z]     ✗ No results
+[2025-10-09T14:31:40.004Z]   Summary: 7 queries OK, 0 errors

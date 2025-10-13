@@ -1,0 +1,125 @@
+# Content Scoring Prompt v1.2
+**VERSION:** 1.2  
+**DATE:** 2025-10-06  
+**CHANGES:** Updated to use `published_date` field (was `date`)
+
+---
+
+## Execution Command
+
+Score all unscored articles in PMO database using MCP. Process in batches of 20 until complete.
+
+---
+
+## Critical Scoring Rules
+
+1. **MUST have BOTH PMO + AI intersection**
+   - NO AI = 1-20 maximum (regardless of PMO relevance)
+   
+2. **Traditional PM/productivity without AI = 10-20**
+   - Useful but not relevant to AI+PMO focus
+   
+3. **Infrastructure/hardware = 10-20**
+   - Chips, data centers, cloud without PMO application
+   
+4. **AI agents for workflow automation = 70-80**
+   - Very relevant to PMO operations
+   
+5. **Model selection, benchmarks, tool evaluation for PMO use = 60-70**
+   
+6. **General business AI (not PMO-specific) = 20-35**
+
+7. **AI-POWERED Office Productivity = 75-90**
+   - Copilot, AI assistants in Excel/Word/PowerPoint
+   - AI note-taking, AI meeting tools
+   - MUST explicitly mention AI features
+   - Look for: AI, machine learning, GPT, Claude, Copilot, intelligent, smart assistant
+   - Traditional Office automation without AI = 10-20
+
+8. **Consumer products, gaming, news, politics = 1**
+
+9. **EVERY article gets score 1-100**
+   - Never leave pmo_score NULL or 0
+
+---
+
+## Fundamental Principle
+
+**AI for PMO** - articles without AI are irrelevant regardless of PMO utility
+
+---
+
+## Scoring Scale
+
+| Range | Description |
+|-------|-------------|
+| 85-100 | Essential AI+PMO |
+| 70-84 | Highly relevant AI+PMO |
+| 50-69 | Moderate AI+PMO |
+| 30-49 | Low relevance |
+| 10-29 | Minimal relevance |
+| 1-9 | No relevance |
+
+---
+
+## High Score Examples
+
+- Excel with Copilot AI = 75-90
+- AI meeting notes = 75-90
+- ChatGPT for project planning = 75-90
+- AI workflow agents = 70-80
+
+## Low Score Examples
+
+- Excel formulas no AI = 10-20
+- Traditional PM no AI = 10-20
+- PowerPoint templates no AI = 10-20
+- Infrastructure news = 10-20
+- Consumer products = 1
+
+---
+
+## Process
+
+### Step 1: Query Unscored Articles
+```sql
+SELECT id, title, content_summary 
+FROM daily_insights 
+WHERE pmo_score IS NULL OR pmo_score = 0 
+LIMIT 20
+```
+
+### Step 2: Score All 20 Silently
+Analyze each article and determine score based on rules above.
+
+### Step 3: Bulk Update
+```sql
+UPDATE daily_insights 
+SET pmo_score = CASE id 
+    WHEN id1 THEN score1 
+    WHEN id2 THEN score2 
+    -- ... continue for all 20
+    END,
+    pmo_application = CASE id 
+    WHEN id1 THEN 'reason1' 
+    WHEN id2 THEN 'reason2' 
+    -- ... continue for all 20
+    END,
+    scoring_prompt_version = '1.2'
+WHERE id IN (id1, id2, id3, ...id20)
+```
+
+### Step 4: Show Progress
+```
+Batch X complete: 20 scored
+```
+
+### Step 5: Repeat Until None Unscored
+
+### Step 6: Final Summary
+
+**Report:**
+- Total scored
+- Count by range (85-100, 70-84, 50-69, 30-49, 1-29)
+- Average score
+- Top 10 articles with scores

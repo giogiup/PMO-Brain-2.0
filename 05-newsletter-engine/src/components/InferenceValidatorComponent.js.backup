@@ -1,0 +1,38 @@
+const BaseComponent = require('./BaseComponent');
+
+class InferenceValidatorComponent extends BaseComponent {
+    async process(insights) {
+        this.log('Validating inference connections...');
+        
+        for (const insight of insights) {
+            this.validateInference(insight);
+            this.processedCount++;
+        }
+        return insights;
+    }
+    
+    validateInference(insight) {
+        // Use the insight data directly since article might not be preserved
+        const hasExplicitPMOTerms = this.checkForPMOTerms(insight);
+        const hasInferredPMOContent = insight.pmoApplications && insight.pmoApplications.length > 50;
+        
+        if (!hasExplicitPMOTerms && hasInferredPMOContent) {
+            insight.reviewFlag = true;
+            insight.reviewNote = "This analysis makes inferential connections not explicitly stated in the source article. Confidence: " + (insight.confidenceScore || 'N/A') + "/10";
+            this.log('Inference detected and flagged');
+        }
+    }
+    
+    checkForPMOTerms(insight) {
+        const pmoTerms = ['project', 'portfolio', 'PMO', 'program', 'initiative', 'stakeholder', 'governance', 'delivery'];
+        
+        // Check title and any content we have access to
+        const title = (insight.title || '').toLowerCase();
+        const summary = (insight.summary || '').toLowerCase();
+        const content = title + ' ' + summary;
+        
+        return pmoTerms.some(term => content.includes(term.toLowerCase()));
+    }
+}
+
+module.exports = InferenceValidatorComponent;

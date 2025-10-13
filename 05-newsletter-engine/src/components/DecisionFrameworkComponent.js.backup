@@ -1,0 +1,181 @@
+const BaseComponent = require('./BaseComponent');
+
+class DecisionFrameworkComponent extends BaseComponent {
+    async process(insights) {
+        this.log('Building decision frameworks...');
+        
+        for (const insight of insights) {
+            insight.decisionFramework = this.buildFramework(insight);
+            insight.formattedFactors = this.formatFactors(insight.factors, insight.contentType);
+            this.processedCount++;
+        }
+        return insights;
+    }
+    
+    buildFramework(insight) {
+        // ===== YOUR SAFE WORKSPACE - MODIFY WITHOUT FEAR =====
+        
+        const factors = insight.factors || this.generateDefaultFactors(insight.contentType);
+        const labels = this.getFactorLabels(insight.contentType);
+        const icons = this.getFactorIcons(insight.contentType);
+        
+        // Basic framework (current logic)
+        const basic = this.formatBasicFramework(factors, labels, icons);
+        
+        // Enhanced framework (your new features go here)
+        const enhanced = this.buildEnhancedFramework(insight);
+        
+        return {
+            basic: basic,
+            enhanced: enhanced,
+            recommendation: this.generateRecommendation(insight)
+        };
+    }
+    
+    buildEnhancedFramework(insight) {
+        // ===== ADD YOUR NEW FRAMEWORK LOGIC HERE =====
+        
+        const assessment = {
+            complexity: this.assessComplexity(insight),
+            implementation: this.assessImplementation(insight),
+            roi: this.assessROI(insight),
+            timeline: this.assessTimeline(insight),
+            risk: this.assessRisk(insight)
+        };
+        
+        return this.formatEnhancedFramework(assessment);
+    }
+    
+    // ===== YOUR NEW ASSESSMENT METHODS =====
+    assessComplexity(insight) {
+        // Your complexity assessment logic
+        if (insight.contentType === 'product') return 'High - Technical setup required';
+        if (insight.contentType === 'research') return 'Medium - Analysis needed';
+        return 'Low - Direct application';
+    }
+    
+    assessImplementation(insight) {
+        // Your implementation assessment logic
+        if (insight.impactScore >= 8) return 'Team ready - High value';
+        if (insight.impactScore >= 6) return 'Consider pilot - Medium value';
+        return 'Monitor - Low priority';
+    }
+    
+    assessROI(insight) {
+        // Your ROI assessment logic
+        const confidenceLevel = insight.confidenceScore || 5;
+        if (confidenceLevel >= 8) return 'High confidence ROI';
+        if (confidenceLevel >= 6) return 'Moderate ROI expected';
+        return 'ROI uncertain';
+    }
+    
+    assessTimeline(insight) {
+        // Your timeline assessment logic
+        if (insight.contentType === 'news') return 'Immediate - Act now';
+        if (insight.contentType === 'event') return 'Scheduled - Plan ahead';
+        return '3-6 months - Strategic planning';
+    }
+    
+    assessRisk(insight) {
+        // Your risk assessment logic
+        if (insight.reviewFlag) return 'Review required - Verify claims';
+        if (insight.confidenceScore < 6) return 'Medium risk - Validate approach';
+        return 'Low risk - Proceed with confidence';
+    }
+    
+    formatEnhancedFramework(assessment) {
+        return Object.entries(assessment).map(([key, value]) => {
+            const icon = this.getEnhancedIcon(key);
+            return `${icon} **${this.capitalize(key)}:** ${value}`;
+        }).join(' | ');
+    }
+    
+    getEnhancedIcon(key) {
+        const icons = {
+            complexity: '🧠',
+            implementation: '🚀',
+            roi: '💰',
+            timeline: '⏱️',
+            risk: '⚠️'
+        };
+        return icons[key] || '📊';
+    }
+    
+    // ===== EXISTING LOGIC PRESERVED =====
+    formatBasicFramework(factors, labels, icons) {
+        return Object.entries(factors).map(([key, value], index) => {
+            const label = labels[index] || key;
+            const icon = icons[index] || '🔧';
+            return `${icon} **${label}:** ${value}`;
+        }).join(' | ');
+    }
+    
+    formatFactors(factors, contentType) {
+        if (!factors || typeof factors !== 'object') {
+            return 'Factors not available';
+        }
+        
+        const labels = this.getFactorLabels(contentType);
+        const icons = this.getFactorIcons(contentType);
+        
+        return Object.entries(factors).map(([key, value], index) => {
+            const label = labels[index] || key;
+            const icon = icons[index] || '🔧';
+            return `${icon} **${label}:** ${value}`;
+        }).join(' | ');
+    }
+    
+    getFactorLabels(contentType) {
+        const factorMaps = {
+            'product': ['Implementation', 'Scale', 'Cost', 'Integration', 'Learning'],
+            'knowledge': ['Complexity', 'Applicability', 'Evidence', 'Practicality', 'Depth'],
+            'research': ['Sample Size', 'Scope', 'Access', 'Credibility', 'Actionability'],
+            'case_study': ['Scalability', 'Industry', 'Results', 'Replicability', 'Detail'],
+            'news': ['Urgency', 'Impact', 'Relevance', 'Timeline', 'Actionability'],
+            'event': ['Timing', 'Audience', 'Cost', 'Format', 'Level'],
+            'opinion': ['Authority', 'Evidence', 'Controversy', 'Timeline', 'Actionability']
+        };
+        return factorMaps[contentType] || factorMaps['knowledge'];
+    }
+    
+    getFactorIcons(contentType) {
+        const iconMaps = {
+            'product': ['🟡', '👥', '💰', '🔗', '🎓'],
+            'knowledge': ['🧠', '🎯', '📊', '⚡', '📚'],
+            'research': ['📊', '🌐', '💰', '🔗', '🎓'],
+            'case_study': ['📈', '🏢', '🎯', '🔄', '📋'],
+            'news': ['⚡', '🎯', '📊', '📅', '⚡'],
+            'event': ['📅', '👥', '💰', '🔗', '🎓'],
+            'opinion': ['👤', '📊', '⚠️', '📅', '⚡']
+        };
+        return iconMaps[contentType] || iconMaps['knowledge'];
+    }
+    
+    generateDefaultFactors(contentType) {
+        const defaults = {
+            'product': { factor1: "Setup Required", factor2: "Team", factor3: "Contact vendor", factor4: "API friendly", factor5: "Training needed" },
+            'knowledge': { factor1: "Medium complexity", factor2: "Team applicable", factor3: "High evidence", factor4: "Very practical", factor5: "Good depth" },
+            'research': { factor1: "Large sample", factor2: "Multiple orgs", factor3: "Free download", factor4: "High credibility", factor5: "High insights" }
+        };
+        return defaults[contentType] || defaults['knowledge'];
+    }
+    
+    generateRecommendation(insight) {
+        if (insight.impactScore >= 8 && insight.confidenceScore >= 7) {
+            return "STRONGLY RECOMMENDED - High impact, high confidence";
+        }
+        if (insight.impactScore >= 6 && insight.confidenceScore >= 6) {
+            return "RECOMMENDED - Good potential value";
+        }
+        if (insight.reviewFlag) {
+            return "REVIEW REQUIRED - Verify before implementation";
+        }
+        return "CONSIDER - Evaluate for your specific context";
+    }
+    
+    capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+}
+
+module.exports = DecisionFrameworkComponent;

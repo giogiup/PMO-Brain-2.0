@@ -1,0 +1,18 @@
+{
+  "total": 6,
+  "needReview": 1,
+  "needReviewPercentage": 17,
+  "highConfidence": 5,
+  "highConfidencePercentage": 83,
+  "fallbacks": 6,
+  "fallbackPercentage": 100,
+  "averageConfidence": 7.7,
+  "contentTypes": {
+    "product": 1,
+    "knowledge": 1,
+    "research": 1,
+    "case_study": 1,
+    "event": 1,
+    "opinion": 1
+  }
+}

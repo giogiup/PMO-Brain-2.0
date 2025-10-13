@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPMO Management Console</title>
+
+    <!-- ── 100 % dark-theme CSS cloned from original file ── -->
+    <style>
+        :root{
+            --bg-dark:#1a1a1a;
+            --bg-card:#1e1e1e;
+            --bg-panel:#2a2a2a;
+            --text-light:#e0e0e0;
+            --accent-red:#ff3b30;
+            --accent-orange:#ff9500;
+            --accent-yellow:#ffcc00;
+            --accent-green:#34c759;
+            --border-radius:8px;
+            --gap:16px
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+            background:var(--bg-dark);
+            color:var(--text-light);
+            padding-top:70px            /* room for fixed hero-bar */
+        }
+
+        /* ---------- reused hero-bar ---------- */
+        #heroBar{
+            position:fixed;
+            top:0;left:0;right:0;
+            height:60px;
+            background:var(--bg-panel);
+            display:flex;
+            align-items:center;
+            padding:0 20px;
+            z-index:1000;
+            border-bottom:2px solid var(--accent-orange)
+        }
+        #heroBar h1{font-size:20px;color:var(--accent-yellow)}
+        #liveClock{margin-left:auto;font-size:14px;color:var(--accent-orange)}
+        .status-pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase;margin-left:12px}
+        .status-pill.connected{background:var(--accent-green);color:#000}
+        .status-pill.error{background:var(--accent-red);color:#fff}
+
+        /* ---------- reused tab nav styling ---------- */
+        nav{
+            background:var(--bg-panel);
+            padding:10px 20px;
+            display:flex;
+            gap:10px;
+            border-radius:var(--border-radius);
+            margin:0 20px 20px
+        }
+        nav button{
+            background:var(--accent-red);
+            color:#fff;
+            border:none;
+            padding:8px 16px;
+            border-radius:var(--border-radius);
+            cursor:pointer;
+            font-weight:600;
+            transition:background .2s
+        }
+        nav button:hover{background:var(--accent-orange)}
+        nav button.active{background:var(--accent-yellow);color:#000}
+
+        /* ---------- tab-content shell (same as old .page) ---------- */
+        .tab-content{
+            display:none;
+            padding:0 20px 20px
+        }
+        .tab-content.active{display:block}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ---------- loading block ---------- */
+        .loading{
+            text-align:center;
+            padding:40px;
+            color:#8e8e93
+        }
+        .loading::after{
+            content:'...';
+            animation:dots 1.5s steps(4,end) infinite
+        }
+        @keyframes dots{
+            0%,20%{content:'.'}40%{content:'..'}60%,100%{content:'...'}
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ── Hero bar (identical to original) ── -->
+    <div id="heroBar">
+        <h1>🧠 SmartPMO Management Console</h1>
+        <div id="liveClock"></div>
+        <span id="dbStatus" class="status-pill connected">Connected</span>
+    </div>
+
+    <!-- ── Tab nav (uses original styling) ── -->
+    <nav>
+        <button class="active" data-tab="discovery">📰 Discovery</button>
+        <button data-tab="sources">🔗 Sources</button>
+        <button data-tab="operations">⚙️ Operations</button>
+        <button data-tab="backlog">📋 Backlog</button>
+        <button data-tab="statistics">📊 Statistics</button>
+        <button data-tab="prefilter">🎯 Pre-Filter Config</button>
+    </nav>
+
+    <!-- ── Content panes (same ids/classes your loader expects) ── -->
+    <div id="discovery-tab" class="tab-content active"><div class="loading">Loading Discovery Module</div></div>
+    <div id="sources-tab" class="tab-content"><div class="loading">Loading Sources Module</div></div>
+    <div id="operations-tab" class="tab-content"><div class="loading">Loading Operations Module</div></div>
+    <div id="backlog-tab" class="tab-content"><div class="loading">Loading Backlog Module</div></div>
+    <div id="statistics-tab" class="tab-content"><div class="loading">Loading Statistics Module</div></div>
+    <div id="prefilter-tab" class="tab-content"><div class="loading">Loading Pre-Filter Config Module</div></div>
+
+    <!-- ── Exact module-loader script you already had ── -->
+    <script type="module">
+        const modules = {
+            discovery: './console-modules/discovery-tab.js',
+            sources:   './console-modules/sources-tab.js',
+            operations:'./console-modules/operations-tab.js',
+            backlog:   './console-modules/backlog-tab.js',
+            statistics:'./console-modules/statistics-tab.js',
+            prefilter: './console-modules/prefilter-tab.js'
+        };
+        const loadedModules = {};
+
+        document.querySelectorAll('nav button').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const tabName = btn.dataset.tab;
+                document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+
+                if (!loadedModules[tabName]) {
+                    try {
+                        const module = await import(modules[tabName]);
+                        loadedModules[tabName] = module;
+                        await module.init();
+                    } catch (err) {
+                        console.error(`Failed to load ${tabName}:`, err);
+                        document.getElementById(`${tabName}-tab`).innerHTML =
+                            `<div style="color:#ff3b30;padding:20px;">Error loading module: ${err.message}</div>`;
+                    }
+                }
+            });
+        });
+
+        (async () => {                                       // auto-load first tab
+            try {
+                const mod = await import(modules.discovery);
+                loadedModules.discovery = mod;
+                await mod.init();
+            } catch (e) { console.error('Discovery init fail:', e); }
+        })();
+
+        document.addEventListener('keydown', e => {          // Ctrl-1 … Ctrl-6 shortcuts
+            if (!e.ctrlKey) return;
+            const map = {1:'discovery',2:'sources',3:'operations',4:'backlog',5:'statistics',6:'prefilter'};
+            if (map[e.key]) { e.preventDefault(); document.querySelector(`[data-tab="${map[e.key]}"]`).click(); }
+        });
+    </script>
+
+    <!-- ── tiny clock helper (keeps hero-bar live) ── -->
+    <script>
+        function updateClock(){document.getElementById('liveClock').textContent=new Date().toLocaleTimeString()}
+        setInterval(updateClock,1000); updateClock();
+    </script>
+</body>
+</html>

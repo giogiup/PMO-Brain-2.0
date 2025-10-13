@@ -1,0 +1,16 @@
+{
+  "name": "smartpmo-website",
+  "version": "1.0.0",
+  "description": "SmartPMO.ai website daily cards generator",
+  "main": "generate-daily-cards.js",
+  "scripts": {
+    "generate": "node generate-daily-cards.js",
+    "test": "node generate-daily-cards.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -1,0 +1,4 @@
+Load SmartPMO automation context:
+SELECT content FROM restart_prompts WHERE title = 'SmartPMO Automation Build';
+
+Continue building the automation system.

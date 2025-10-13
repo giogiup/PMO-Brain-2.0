@@ -1,0 +1,14 @@
+{
+  "polling": {
+    "tier1Interval": 7200000,
+    "tier2Interval": 14400000,
+    "tier3Interval": 86400000,
+    "tier4Interval": 86400000
+  },
+  "filtering": {
+    "pmoRelevanceThreshold": 0.7,
+    "maxArticlesPerSource": 10,
+    "duplicateDetection": true
+  },
+  "userAgent": "PMO-Brain-2.0-Discovery-Engine/1.0 (AI Content Aggregator)"
+}

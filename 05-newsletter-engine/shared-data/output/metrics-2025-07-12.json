@@ -1,0 +1,33 @@
+{
+  "tagline": {
+    "component": "TaglineComponent",
+    "processed": 6,
+    "timestamp": "2025-07-12T13:58:40.018Z"
+  },
+  "audience": {
+    "component": "AudienceComponent",
+    "processed": 6,
+    "timestamp": "2025-07-12T13:58:40.019Z"
+  },
+  "decisionFramework": {
+    "component": "DecisionFrameworkComponent",
+    "processed": 6,
+    "timestamp": "2025-07-12T13:58:40.020Z"
+  },
+  "inferenceValidator": {
+    "component": "InferenceValidatorComponent",
+    "processed": 6,
+    "timestamp": "2025-07-12T13:58:40.021Z"
+  },
+  "contentGrouper": {
+    "component": "ContentGrouperComponent",
+    "processed": 6,
+    "timestamp": "2025-07-12T13:58:40.022Z",
+    "groupingStrategy": "contentType"
+  },
+  "renderer": {
+    "component": "RendererComponent",
+    "processed": 6,
+    "timestamp": "2025-07-12T13:58:40.047Z"
+  }
+}

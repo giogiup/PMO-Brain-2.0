@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "startTime": "23:00",
+  "runDiscoveryFirst": true,
+  "waitBetweenSteps": 5
+}
