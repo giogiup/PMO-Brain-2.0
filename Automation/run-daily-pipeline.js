@@ -1,6 +1,9 @@
 // ============================================================================
 // SMARTPMO.AI - MASTER DAILY AUTOMATION PIPELINE
 // ============================================================================
+// PURPOSE: Fully automated content pipeline that discovers, analyzes, and publishes
+//          AI + PMO insights to smartpmo.ai website daily
+//
 // Orchestrates all 7 steps: Discovery → PreFilter → Scoring → Fetch → Enrich → Cards → Deploy
 // Run: node automation/run-daily-pipeline.js
 // Test: node automation/run-daily-pipeline.js --test
