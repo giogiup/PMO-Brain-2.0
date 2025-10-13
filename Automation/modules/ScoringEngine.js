@@ -38,7 +38,8 @@
 //   □ Database updates don't break foreign key constraints
 // ============================================================================
 
-const AIProvider = require('./AIProvider');
+const AIRouter = require('./AIRouter');
+const path = require('path');
 
 class ScoringEngine {
     constructor(db, config = {}) {
@@ -50,14 +51,13 @@ class ScoringEngine {
             ...config
         };
         
-        // CRITICAL: Pass 'SCORING' task to AIProvider
-        // This enables task-specific provider selection (AI_PROVIDER_SCORING)
+        // CRITICAL: Use AIRouter for waterfall failover across multiple providers
         // WHY: Scoring has different requirements than enrichment
         //      - Low token usage (just title+URL, not full content)
         //      - High volume (100-200 articles/day)
         //      - Speed matters (users wait for results)
-        // BEST PROVIDER: Groq (fast, cheap for low-token)
-        this.aiProvider = new AIProvider('SCORING');
+        // PROVIDER WATERFALL: Groq (70) → Fireworks (205) → Cohere (25) → GPT-4o-mini (paid)
+        this.aiRouter = new AIRouter(this.db, 'scoring');
         
         this.prompt = null; // Loaded from database at runtime
         
@@ -163,12 +163,10 @@ class ScoringEngine {
                 console.log(`  Error: ${error.message}`);
             }
             
-            // RATE LIMITING: Critical to avoid API errors
-            // WHY: Each provider has different rate limits
-            //      - Groq: 300K tokens/min (generous, but be safe)
-            //      - Gemini: 15 req/min (must respect)
-            // SOLUTION: Use provider-specific delay from AIProvider
-            await this.sleep(this.aiProvider.getRateLimit());
+            // RATE LIMITING: Small delay between requests
+            // WHY: Prevents overwhelming API providers
+            // NOTE: AIRouter handles provider-specific limits automatically
+            await this.sleep(500); // 500ms = ~2 requests/sec, safe for all providers
         }
         
         // STEP 4: Calculate statistics
@@ -231,11 +229,14 @@ class ScoringEngine {
             .replace('{title}', article.title)
             .replace('{url}', article.url);
 
-        // Call AI provider (abstracted - could be Groq, Gemini, or OpenAI)
-        const text = await this.aiProvider.generateCompletion(prompt, {
-            temperature: 0.3,  // Low temperature = more consistent scoring
-            maxTokens: 500     // Short response expected (just score + brief reasoning)
-        });
+        // Call AI router with waterfall failover
+        // Format prompt as OpenAI-style messages array
+        const messages = [
+            { role: 'user', content: prompt }
+        ];
+        
+        const result = await this.aiRouter.complete(messages, { temperature: 0.3, max_tokens: 100 }, article.id);
+        const text = result?.content;
         
         if (!text) {
             return null; // AI call failed

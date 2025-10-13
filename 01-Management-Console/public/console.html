@@ -190,6 +190,7 @@
     <button class="active" data-tab="discovery">📰 Discovery</button>
     <button data-tab="sources">🔗 Sources</button>
     <button data-tab="operations">⚙️ Operations</button>
+    <button data-tab="api-usage">💰 API Usage</button>
     <button data-tab="backlog">📋 Backlog</button>
     <button data-tab="statistics">📊 Statistics</button>
     <button data-tab="prefilter">🎯 Pre-Filter Config</button>
@@ -199,6 +200,7 @@
   <div id="discovery-tab" class="tab-content active"><div class="loading">Loading Discovery Module</div></div>
   <div id="sources-tab" class="tab-content"><div class="loading">Loading Sources Module</div></div>
   <div id="operations-tab" class="tab-content"><div class="loading">Loading Operations Module</div></div>
+  <div id="api-usage-tab" class="tab-content"><div class="loading">Loading API Usage Module</div></div>
   <div id="backlog-tab" class="tab-content"><div class="loading">Loading Backlog Module</div></div>
   <div id="statistics-tab" class="tab-content"><div class="loading">Loading Statistics Module</div></div>
   <div id="prefilter-tab" class="tab-content"><div class="loading">Loading Pre-Filter Config Module</div></div>
@@ -209,6 +211,7 @@
       discovery: './console-modules/discovery-tab.js',
       sources: './console-modules/sources-tab.js',
       operations: './console-modules/operations-tab.js',
+      'api-usage': './console-modules/api-usage-tab.js',
       backlog: './console-modules/backlog-tab.js',
       statistics: './console-modules/statistics-tab.js',
       prefilter: './console-modules/prefilter-tab.js'
@@ -249,7 +252,7 @@
 
     document.addEventListener('keydown', e => {
       if (!e.ctrlKey) return;
-      const map = {1:'discovery',2:'sources',3:'operations',4:'backlog',5:'statistics',6:'prefilter'};
+      const map = {1:'discovery',2:'sources',3:'operations',4:'api-usage',5:'backlog',6:'statistics',7:'prefilter'};
       if (map[e.key]) {
         e.preventDefault();
         document.querySelector(`[data-tab="${map[e.key]}"]`).click();

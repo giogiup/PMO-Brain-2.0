@@ -9,6 +9,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
 const consoleRoutes = require('../../Automation/api/console-routes'); // ADDED
+const AIRouter = require('../../Automation/modules/AIRouter');
 const app = express();
 const PORT = 8080;
 
@@ -614,6 +615,70 @@ app.post('/api/restart', (req, res) => {
             res.json({ success: true, id: this.lastID });
         });
     });
+});
+
+// ============================================================================
+// API USAGE TRACKING ENDPOINTS
+// ============================================================================
+
+const AIProviderRegistry = require('../../Automation/modules/AIProviderRegistry');
+const DatabaseManager = require('../../Automation/modules/DatabaseManager');
+
+// Initialize provider registry
+const dbManager = new DatabaseManager(dbPath);
+const providerRegistry = new AIProviderRegistry(dbManager);
+
+// Get usage statistics for last N days
+app.get('/api/usage/stats', async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 7;
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        const endDate = new Date();
+        
+        const stats = await providerRegistry.getUsageReport(
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+        );
+        
+        // Format for frontend
+        const formatted = stats.map(row => ({
+            date: row.timestamp?.split(' ')[0] || 'N/A',
+            provider_name: row.provider_name,
+            use_case: row.task_type,
+            total_calls: row.total_calls || 0,
+            successful_calls: row.successful_calls || 0,
+            total_tokens_input: row.total_input_tokens || 0,
+            total_tokens_output: row.total_output_tokens || 0,
+            total_cost: row.total_cost || 0
+        }));
+        
+        res.json(formatted);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get provider status (usage vs limits)
+app.get('/api/usage/provider-status', async (req, res) => {
+    try {
+        const useCase = req.query.useCase || 'scoring';
+        const providers = await providerRegistry.getUsageStats(useCase);
+        
+        // Format for frontend
+        const status = providers.map(p => ({
+            provider: p.provider_name,
+            priority: p.enabled,
+            usage: p.current_usage || 0,
+            limit: p.daily_article_limit || 999,
+            remaining: (p.daily_article_limit || 999) - (p.current_usage || 0),
+            isPaid: p.cost_tier === 'paid'
+        }));
+        
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ============================================================================

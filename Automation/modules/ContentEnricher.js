@@ -62,23 +62,23 @@
 //   □ Token usage fits within provider limits
 // ============================================================================
 
-const AIProvider = require('./AIProvider');
+const AIRouter = require('./AIRouter');
+const path = require('path');
 
 class ContentEnricher {
     constructor(db) {
         this.db = db;
         
-        // CRITICAL: Pass 'ENRICHMENT' task to AIProvider
-        // This enables task-specific provider selection (AI_PROVIDER_ENRICHMENT)
+        // CRITICAL: Use AIRouter for waterfall failover across multiple providers
         // WHY: Enrichment has different requirements than scoring
         //      - HIGH token usage (full article content, not just title)
         //      - Lower volume (10-20 articles vs 100-200 for scoring)
         //      - Quality matters more than speed
-        // BEST PROVIDER: Gemini (high token capacity, free tier works)
+        // PROVIDER WATERFALL: Gemini (primary) → GPT-4o-mini (paid backup)
         // TOKEN MATH:
-        //   - Groq free: 100K/day = 2 articles max (45K each)
-        //   - Gemini free: Much higher limits = 20+ articles/day
-        this.aiProvider = new AIProvider('ENRICHMENT');
+        //   - Gemini free: High limits = 20+ articles/day
+        //   - GPT-4o-mini: $0.15/1M input, $0.60/1M output (emergency only)
+        this.aiRouter = new AIRouter(this.db, 'enrichment');
         
         this.prompt = null; // Loaded from database at runtime
         
@@ -180,13 +180,11 @@ class ContentEnricher {
                     console.log(`  ❌ Failed to enrich\n`);
                 }
                 
-                // RATE LIMITING: Critical for high-token tasks
-                // WHY: Enrichment uses 45K tokens/article (100x more than scoring)
-                //      Provider limits are strict on token usage
-                // GEMINI: 15 req/min = must wait 4 seconds between calls
-                // GROQ: Would hit 100K/day limit after 2 articles
-                // SOLUTION: Use provider-specific delay
-                await this.sleep(this.aiProvider.getRateLimit());
+                // RATE LIMITING: 4 seconds between enrichment calls
+                // WHY: Enrichment uses 45K tokens/article (high token usage)
+                // GEMINI: 15 req/min = must wait 4 seconds
+                // GPT-4o-mini: Higher limits, but 4s is safe for both
+                await this.sleep(4000);
                 
             } catch (error) {
                 this.stats.failed++;
@@ -265,11 +263,14 @@ class ContentEnricher {
             .replace('{url}', article.url)
             .replace('{content}', article.full_content.substring(0, 4000));
         
-        // Call AI provider (Gemini recommended for high-token task)
-        const text = await this.aiProvider.generateCompletion(prompt, {
-            temperature: 0.3,  // Low temp = consistent structure
-            maxTokens: 1000    // Enough for full JSON response
-        });
+        // Call AI router with waterfall failover
+        // Format prompt as OpenAI-style messages array
+        const messages = [
+            { role: 'user', content: prompt }
+        ];
+        
+        const result = await this.aiRouter.complete(messages, { temperature: 0.3, max_tokens: 2000 }, article.id);
+        const text = result?.content;
         
         if (!text) {
             return null; // AI call failed
