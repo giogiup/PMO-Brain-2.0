@@ -157,8 +157,8 @@ class AIProviderRegistry {
 
         const query = `
             INSERT INTO ai_usage_log 
-            (provider_name, task_type, article_id, tokens_input, tokens_output, 
-             cost_usd, success, error_message, response_time_ms, timestamp)
+            (provider_name, use_case, article_id, tokens_input, tokens_output, 
+             cost, success, error_message, response_time_ms, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `;
 
@@ -185,18 +185,19 @@ class AIProviderRegistry {
         const query = `
             SELECT 
                 provider_name,
-                task_type,
+                use_case as task_type,
                 COUNT(*) as total_calls,
                 SUM(tokens_input) as total_input_tokens,
                 SUM(tokens_output) as total_output_tokens,
-                SUM(cost_usd) as total_cost,
+                SUM(cost) as total_cost,
                 AVG(response_time_ms) as avg_response_time,
                 SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_calls,
-                SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failed_calls
+                SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failed_calls,
+                created_at as timestamp
             FROM ai_usage_log
-            WHERE DATE(timestamp) BETWEEN ? AND ?
-            GROUP BY provider_name, task_type
-            ORDER BY provider_name, task_type
+            WHERE DATE(created_at) BETWEEN ? AND ?
+            GROUP BY provider_name, use_case
+            ORDER BY provider_name, use_case
         `;
         return await this.db.query(query, [startDate, endDate]);
     }

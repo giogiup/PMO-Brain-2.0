@@ -126,37 +126,34 @@ class AIProviderAdapter {
      * Cohere-style completion
      */
     async cohereComplete(messages, options) {
-        // Convert OpenAI message format to Cohere format
-        const systemMessage = messages.find(m => m.role === 'system');
+        // Cohere v2 API format: simple message + chat_history
         const userMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant');
-
-        // Build conversation history
+        
+        // Get the last user message
+        const lastMessage = userMessages[userMessages.length - 1].content;
+        
+        // Build chat history (all previous messages)
         const chatHistory = [];
         for (let i = 0; i < userMessages.length - 1; i++) {
             const msg = userMessages[i];
             chatHistory.push({
-                role: msg.role.toUpperCase(),
+                role: msg.role === 'user' ? 'USER' : 'CHATBOT',
                 message: msg.content
             });
         }
 
-        const lastMessage = userMessages[userMessages.length - 1].content;
-
         const response = await this.client.chat({
             model: this.model,
-            messages: [
-                ...(systemMessage ? [{ role: 'SYSTEM', content: systemMessage.content }] : []),
-                ...chatHistory,
-                { role: 'USER', content: lastMessage }
-            ],
+            message: lastMessage,
+            chatHistory: chatHistory.length > 0 ? chatHistory : undefined,
             temperature: options.temperature || 0.7,
-            max_tokens: options.max_tokens || 500
+            maxTokens: options.max_tokens || 500
         });
 
         return {
-            content: response.message.content[0].text,
-            tokens_input: response.usage?.tokens?.inputTokens || 0,
-            tokens_output: response.usage?.tokens?.outputTokens || 0
+            content: response.text,
+            tokens_input: response.meta?.tokens?.inputTokens || 0,
+            tokens_output: response.meta?.tokens?.outputTokens || 0
         };
     }
 

@@ -74,6 +74,11 @@ class DatabaseManager {
         });
     }
     
+    // Alias for compatibility with AIProviderRegistry
+    async query(sql, params = []) {
+        return this.all(sql, params);
+    }
+    
     // ========================================================================
     // DISCOVERY SOURCES
     // ========================================================================
