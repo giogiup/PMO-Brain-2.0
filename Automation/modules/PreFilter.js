@@ -1,15 +1,18 @@
 // ============================================================================
-// PRE-FILTER V2 - Multiplicative Scoring Algorithm
+// PRE-FILTER V3 - Hybrid Semantic + Keyword Scoring
 // ============================================================================
 // Purpose: Reduce 800+ discovered articles to ~100 most promising candidates
-// Method: Contextual keyword matching with AI+PMO interaction scoring
+// Method: Semantic similarity (embeddings) OR keyword matching
 // Output: Top N articles marked as prefilter_passed=1 for Gemini scoring
 // ============================================================================
+
+const SemanticPrefilter = require('./SemanticPrefilter');
 
 class PreFilter {
     constructor(db) {
         this.db = db;
         this.config = {};
+        this.semanticPrefilter = new SemanticPrefilter();
         this.keywords = {
             ai_core: [],
             ai_tools: [],
@@ -34,6 +37,7 @@ class PreFilter {
         
         // Step 1: Load configuration
         await this.loadConfig();
+        await this.semanticPrefilter.initialize();
         
         // Check if pre-filter is enabled
         if (this.config.enable_prefilter === 'false') {
@@ -45,22 +49,31 @@ class PreFilter {
         await this.loadKeywords();
         await this.loadBonuses();
         
+        const useSemanticMode = this.config.use_semantic_prefilter === 'true' && this.semanticPrefilter.enabled;
+        
         console.log(`📊 Loaded configuration:`);
+        console.log(`   Mode: ${useSemanticMode ? 'SEMANTIC' : 'KEYWORD'}`);
         console.log(`   Pass threshold: ${this.config.pass_threshold} points`);
         console.log(`   Max articles to pass: ${this.config.max_articles_to_pass}`);
-        console.log(`   Keywords: ${this.keywords.ai_core.length} AI-core, ${this.keywords.ai_tools.length} AI-tools, ${this.keywords.pmo_core.length} PMO-core, ${this.keywords.pmo_inference.length} PMO-inference`);
-        console.log(`   Excludes: ${this.keywords.excludes.length} soft excludes\n`);
+        if (!useSemanticMode) {
+            console.log(`   Keywords: ${this.keywords.ai_core.length} AI-core, ${this.keywords.ai_tools.length} AI-tools, ${this.keywords.pmo_core.length} PMO-core, ${this.keywords.pmo_inference.length} PMO-inference`);
+            console.log(`   Excludes: ${this.keywords.excludes.length} soft excludes`);
+        }
+        console.log();
         
-        // Step 3: Get all unscored articles for the date
+        // Step 3: Get all unscored articles discovered today
+        // NOTE: We filter by discovered_at, NOT published_date
+        // published_date is for discovery logic only - prefilter evaluates ALL discoveries
+        // CRITICAL FIX: Limit to 500 articles per run to prevent timeout/hanging
         const articles = await this.db.all(`
     SELECT id, title, url
     FROM daily_insights
-    WHERE published_date = ?
+    WHERE DATE(discovered_at) = ?
     AND pmo_score IS NULL
     AND prefilter_passed = 0
-    AND DATE(discovered_at) = ?
     ORDER BY id
-`, [runDate, runDate]);
+    LIMIT 500
+`, [runDate]);
         
         if (articles.length === 0) {
             console.log('⚠️  No articles to filter\n');
@@ -71,14 +84,84 @@ class PreFilter {
         console.log(`🔍 Processing ${articles.length} articles...\n`);
         
         // Step 4: Score all articles
-        const scoredArticles = [];
-        
-        for (const article of articles) {
-            const scoreData = await this.scoreArticle(article);
-            scoredArticles.push({ ...article, ...scoreData });
-            
-            // Log decision
-            await this.logDecision(article.id, runDate, scoreData);
+        let scoredArticles = [];
+        let semanticFailed = false;
+
+        if (useSemanticMode) {
+            // SEMANTIC MODE (with fallback to keyword mode on timeout/error)
+            console.log('   Using semantic similarity scoring...\n');
+            const articlesToScore = articles.map(a => ({
+                title: a.title,
+                url: a.url,
+                id: a.id
+            }));
+
+            try {
+                const semanticScored = await this.semanticPrefilter.scoreArticles(articlesToScore);
+                const semanticStats = this.semanticPrefilter.getStats(semanticScored);
+
+                console.log(`   Semantic stats: ${semanticStats.passRate} pass rate, avg score: ${semanticStats.avgScore}`);
+                console.log(`   Tiers: ${JSON.stringify(semanticStats.tiers)}\n`);
+
+                // Merge semantic scores with article data
+                const scoreMap = new Map(semanticScored.map(s => [s.url, s]));
+
+                for (const article of articles) {
+                    const scores = scoreMap.get(article.url);
+                    if (scores) {
+                        const normalizedScore = Math.round(scores.total_score * 100); // 0-1 -> 0-100
+                        const passed = this.semanticPrefilter.shouldPass(scores);
+
+                        scoredArticles.push({
+                            ...article,
+                            score: normalizedScore,
+                            category: 'SEMANTIC',
+                            matches: [`TIER:${scores.quality_tier}`, `AI:${scores.sim_ai}`, `ENT:${scores.sim_enterprise}`, `PMO:${scores.sim_pmo}`],
+                            passed,
+                            reason: `Semantic: ${scores.quality_tier} (score: ${scores.total_score})`,
+                            semantic_scores: scores
+                        });
+
+                        // Log with semantic data
+                        await this.logSemanticDecision(article.id, runDate, normalizedScore, passed, scores);
+                    } else {
+                        scoredArticles.push({
+                            ...article,
+                            score: 0,
+                            category: 'ERROR',
+                            matches: [],
+                            passed: false,
+                            reason: 'Semantic scoring failed'
+                        });
+                    }
+                }
+            } catch (error) {
+                // GRACEFUL FALLBACK: If semantic mode fails, fall back to keyword mode
+                console.warn(`\n⚠️  Semantic prefilter failed: ${error.message}`);
+                console.warn('   Falling back to keyword mode...\n');
+                semanticFailed = true;
+            }
+        }
+
+        if (!useSemanticMode || semanticFailed) {
+            // KEYWORD MODE
+            console.log('   Using keyword matching scoring...\n');
+            scoredArticles = []; // Reset if falling back from semantic failure
+
+            let processed = 0;
+            for (const article of articles) {
+                const scoreData = await this.scoreArticle(article);
+                scoredArticles.push({ ...article, ...scoreData });
+
+                // Log decision
+                await this.logDecision(article.id, runDate, scoreData);
+
+                // Progress logging every 100 articles
+                processed++;
+                if (processed % 100 === 0) {
+                    console.log(`   Progress: ${processed}/${articles.length} articles scored`);
+                }
+            }
         }
         
         // Step 5: Filter by threshold
@@ -294,6 +377,38 @@ class PreFilter {
             JSON.stringify([]),
             scoreData.matches.length,
             scoreData.reason
+        ]);
+    }
+    
+    async logSemanticDecision(articleId, runDate, score, passed, semanticScores) {
+        await this.db.run(`
+            INSERT INTO prefilter_log (
+                article_id,
+                run_date,
+                passed,
+                score,
+                sim_ai,
+                sim_enterprise,
+                sim_pmo,
+                bm25_score,
+                total_score,
+                keyword_density,
+                quality_tier,
+                decision_reason
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            articleId,
+            runDate,
+            passed ? 1 : 0,
+            score,
+            semanticScores.sim_ai,
+            semanticScores.sim_enterprise,
+            semanticScores.sim_pmo,
+            semanticScores.bm25_score,
+            semanticScores.total_score,
+            semanticScores.keyword_density,
+            semanticScores.quality_tier,
+            `Semantic: ${semanticScores.quality_tier} (${semanticScores.total_score})`
         ]);
     }
     
