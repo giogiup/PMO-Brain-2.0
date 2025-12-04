@@ -22,25 +22,26 @@ Discovery → PreFilter → Scoring → Fetch → Enrich → Cards → Deploy
 
 ---
 
-## Zombie Process Issue (CRITICAL)
+## Zombie Process Issue (FIXED Dec 1, 2025)
 
-**Root Cause:** SemanticPrefilter.js spawns Python subprocess with NO TIMEOUT
-- 31,931 articles backlogged (not 15K!)
-- Python process hung processing massive batch
+**Root Cause:** SemanticPrefilter.js spawned Python subprocess with NO TIMEOUT
+- 31,931 articles backlogged, Python hung processing massive batch
 - Last successful run: Oct 17, 2025
-- Semantic mode enabled (`use_semantic_prefilter: true`)
 
 **Fix Applied:**
-1. Added 5-min timeout to Python subprocess (SemanticPrefilter.js:95)
-2. Added 1000-article batch limit (PreFilter.js:67)
-3. Added graceful fallback to keyword mode on timeout
-4. Added progress logging every 100 articles
+1. 5-min timeout to Python subprocess (SemanticPrefilter.js:108)
+2. 1000-article batch limit (PreFilter.js:75)
+3. Graceful fallback to keyword mode on timeout
+4. Progress logging every 100 articles
+5. Backlog cleanup script (delete >5 days old)
+6. DB optimization (VACUUM + ANALYZE)
+
+**Results:**
+- Deleted 31,749 stale articles (>5 days)
+- Remaining backlog: 1,255 articles (<5 days)
+- DB size: 26.5 MB → 18.8 MB (29% reduction)
 
 **Note:** Read CLAUDE.md + README.md together for full context in new chats
-
-**Files Modified:**
-- `Automation/modules/SemanticPrefilter.js` (timeout handling)
-- `Automation/modules/PreFilter.js` (batch limiting, fallback)
 
 ---
 
