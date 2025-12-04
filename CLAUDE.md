@@ -32,9 +32,11 @@ Discovery → PreFilter → Scoring → Fetch → Enrich → Cards → Deploy
 
 **Fix Applied:**
 1. Added 5-min timeout to Python subprocess (SemanticPrefilter.js:95)
-2. Added 500-article batch limit (PreFilter.js:67)
+2. Added 1000-article batch limit (PreFilter.js:67)
 3. Added graceful fallback to keyword mode on timeout
 4. Added progress logging every 100 articles
+
+**Note:** Read CLAUDE.md + README.md together for full context in new chats
 
 **Files Modified:**
 - `Automation/modules/SemanticPrefilter.js` (timeout handling)

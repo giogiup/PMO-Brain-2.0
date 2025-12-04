@@ -64,7 +64,7 @@ class PreFilter {
         // Step 3: Get all unscored articles discovered today
         // NOTE: We filter by discovered_at, NOT published_date
         // published_date is for discovery logic only - prefilter evaluates ALL discoveries
-        // CRITICAL FIX: Limit to 500 articles per run to prevent timeout/hanging
+        // CRITICAL FIX: Limit to 1000 articles per run to prevent timeout/hanging
         const articles = await this.db.all(`
     SELECT id, title, url
     FROM daily_insights
@@ -72,7 +72,7 @@ class PreFilter {
     AND pmo_score IS NULL
     AND prefilter_passed = 0
     ORDER BY id
-    LIMIT 500
+    LIMIT 1000
 `, [runDate]);
         
         if (articles.length === 0) {
