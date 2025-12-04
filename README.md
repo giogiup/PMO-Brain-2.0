@@ -61,7 +61,7 @@ Enrich (20) → Cards (10-20) → Deploy (Website)
 | Module | Purpose | Tech |
 |--------|---------|------|
 | **DiscoveryEngine.js** | Find articles from 4 sources | RSS, Google, GDELT, NewsAPI |
-| **PreFilter.js** | Fast semantic/keyword scoring | Hybrid mode, 500/batch |
+| **PreFilter.js** | Fast semantic/keyword scoring | Hybrid mode, 1000/batch |
 | **SemanticPrefilter.js** | Python subprocess wrapper | Embeddings, BM25, 5-min timeout |
 | **ScoringEngine.js** | Deep AI analysis | Multi-provider failover |
 | **ContentFetcher.js** | Get full article text | Jina AI Reader |
@@ -104,17 +104,24 @@ Web dashboard for monitoring, testing, and configuration.
 
 ### Zombie Pipeline Fix (Dec 1, 2025)
 
-**Problem:** Pipeline hung since Nov 25 processing 31K+ backlogged articles.
+**Problem:** Pipeline hung since Nov 25, 31,931 articles backlogged.
 
 **Root Cause:** SemanticPrefilter spawned Python subprocess with NO TIMEOUT.
 
 **Solution:**
 1. Added 5-min timeout to Python subprocess
-2. Added 500-article batch limit (prevents massive batches)
+2. Added 1000-article batch limit (handles ~800/day discovery)
 3. Added graceful fallback to keyword mode on timeout
 4. Added progress logging every 100 articles
+5. Created cleanup script: `Automation/cleanup-old-backlog.js`
+6. DB optimization: VACUUM + ANALYZE
 
-**Files:** `SemanticPrefilter.js`, `PreFilter.js`
+**Results:**
+- Deleted 31,749 stale articles (>5 days old)
+- Remaining backlog: 1,255 fresh articles
+- DB size reduced: 26.5 MB → 18.8 MB (29% smaller)
+
+**Files:** `SemanticPrefilter.js`, `PreFilter.js`, `cleanup-old-backlog.js`
 **Details:** See `ZOMBIE_FIX.md`
 
 ---
