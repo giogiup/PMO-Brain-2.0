@@ -209,16 +209,26 @@ async function runDailyPipeline() {
             const displayManager = new ArticleDisplayManager(syncDb);
 
             // Get top scored articles from today that aren't already displayed
+            // Use DISTINCT ON url to avoid duplicates from multiple discovery runs
             const articlesToDisplay = syncDb.prepare(`
-                SELECT id, title, pmo_score, discovered_at
+                SELECT id, title, url, pmo_score, discovered_at
                 FROM daily_insights
                 WHERE DATE(discovered_at) = ?
                   AND pmo_score >= 70
                   AND content_fetched = 1
                   AND is_displayed = 0
+                  AND id IN (
+                    SELECT MAX(id) as id
+                    FROM daily_insights
+                    WHERE DATE(discovered_at) = ?
+                      AND pmo_score >= 70
+                      AND content_fetched = 1
+                      AND is_displayed = 0
+                    GROUP BY url
+                  )
                 ORDER BY pmo_score DESC, discovered_at DESC
                 LIMIT 20
-            `).all(runDate);
+            `).all(runDate, runDate);
 
             console.log(`\n   Found ${articlesToDisplay.length} articles ready for display`);
 
