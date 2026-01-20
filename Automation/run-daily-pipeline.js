@@ -22,6 +22,7 @@ const ScoringEngine = require('./modules/ScoringEngine');
 const ContentFetcher = require('./modules/ContentFetcher');
 const ContentEnricher = require('./modules/ContentEnricher');
 const CardGenerator = require('./modules/CardGenerator');
+const ArticleDisplayManager = require('./modules/ArticleDisplayManager');
 const DatabaseManager = require('./modules/DatabaseManager');
 
 // ============================================================================
@@ -42,6 +43,7 @@ const CONFIG = {
         fetch: !process.argv.includes('--skip-fetch'),
         keywords: !process.argv.includes('--skip-keywords'),
         cards: !process.argv.includes('--skip-cards'),
+        display: !process.argv.includes('--skip-display'),
         deploy: !process.argv.includes('--skip-deploy')
     }
 };
@@ -53,7 +55,12 @@ const CONFIG = {
 async function runDailyPipeline() {
     const startTime = Date.now();
     const dateArg = process.argv.find(arg => arg.startsWith('--date='));
-    const runDate = dateArg ? dateArg.split('=')[1] : new Date().toISOString().split('T')[0];
+    // Use local date instead of UTC
+    const d = new Date();
+    const runDate = dateArg ? dateArg.split('=')[1] : 
+        d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
     
     console.log('\n╔═══════════════════════════════════════════════════════════════╗');
     console.log('║         SMARTPMO.AI DAILY AUTOMATION PIPELINE                 ║');
@@ -72,6 +79,7 @@ async function runDailyPipeline() {
         fetch: null,
         keywords: null,
         cards: null,
+        display: null,
         deploy: null
     };
     
@@ -176,19 +184,72 @@ async function runDailyPipeline() {
             console.log('═'.repeat(60));
             console.log('STEP 5/7: SMART CARD GENERATION');
             console.log('═'.repeat(60));
-            
+
             const generator = new CardGenerator(db);
             results.cards = await generator.run(runDate);
-            
+
             console.log(`\n✅ Cards generated: ${results.cards.cardsGenerated} cards`);
             if (results.cards.premiumCount > 0) {
                 console.log(`   ⭐ Premium articles (>=89): ${results.cards.premiumCount}`);
             }
             console.log();
         }
-        
+
         // ====================================================================
-        // STEP 6: GIT DEPLOY
+        // STEP 6: ARTICLE DISPLAY MANAGER (FIFO - 20 article limit)
+        // ====================================================================
+        if (CONFIG.steps.display) {
+            console.log('═'.repeat(60));
+            console.log('STEP 6/7: ARTICLE DISPLAY MANAGER (Latest Intelligence)');
+            console.log('═'.repeat(60));
+
+            // ArticleDisplayManager uses better-sqlite3 (sync), so create separate connection
+            const Database = require('better-sqlite3');
+            const syncDb = new Database(CONFIG.dbPath);
+            const displayManager = new ArticleDisplayManager(syncDb);
+
+            // Get top scored articles from today that aren't already displayed
+            const articlesToDisplay = syncDb.prepare(`
+                SELECT id, title, pmo_score, discovered_at
+                FROM daily_insights
+                WHERE DATE(discovered_at) = ?
+                  AND pmo_score >= 70
+                  AND content_fetched = 1
+                  AND is_displayed = 0
+                ORDER BY pmo_score DESC, discovered_at DESC
+                LIMIT 20
+            `).all(runDate);
+
+            console.log(`\n   Found ${articlesToDisplay.length} articles ready for display`);
+
+            let displayedCount = 0;
+            let skippedCount = 0;
+
+            for (const article of articlesToDisplay) {
+                try {
+                    const result = await displayManager.updateAutoSection(article.id);
+                    displayedCount++;
+                    console.log(`   ✅ Displayed: ${article.title.substring(0, 60)}... (score: ${article.pmo_score})`);
+                } catch (error) {
+                    skippedCount++;
+                    console.log(`   ⚠️  Skipped article ${article.id}: ${error.message}`);
+                }
+            }
+
+            results.display = {
+                attempted: articlesToDisplay.length,
+                displayed: displayedCount,
+                skipped: skippedCount
+            };
+
+            // Close sync database connection
+            syncDb.close();
+
+            console.log(`\n✅ Display update complete: ${displayedCount} articles added to Latest Intelligence\n`);
+        }
+
+        // ====================================================================
+        // STEP 7: GIT DEPLOY
         // ====================================================================
         if (CONFIG.steps.deploy && !CONFIG.testMode) {
             console.log('═'.repeat(60));
@@ -223,6 +284,7 @@ async function runDailyPipeline() {
         if (results.cards?.premiumCount > 0) {
             console.log(`   ⭐ Premium (>=89): ${results.cards.premiumCount}`);
         }
+        console.log(`📺 Articles displayed: ${results.display?.displayed || 0}/${results.display?.attempted || 0}`);
         console.log(`🚀 Deployed: ${results.deploy?.success ? 'YES' : 'NO'}`);
         console.log('═'.repeat(60));
         console.log();
@@ -231,11 +293,14 @@ async function runDailyPipeline() {
         await updateDailyRunsTable(db, runDate, results, duration);
         
         // Log to operations_log
-        await db.logOperation('pipeline-complete', 'automation', 'success', 
-            `Daily pipeline completed in ${duration} minutes`, 
+        await db.logOperation('pipeline-complete', 'automation', 'success',
+            `Daily pipeline completed in ${duration} minutes`,
             JSON.stringify(results)
         );
-        
+
+        // Create and auto-open summary log
+        await createAndOpenSummaryLog(runDate, duration, results);
+
     } catch (error) {
         console.error('\n❌ PIPELINE FAILED:', error.message);
         console.error(error.stack);
@@ -262,6 +327,108 @@ async function runDailyPipeline() {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+async function createAndOpenSummaryLog(runDate, duration, results) {
+    const fs = require('fs');
+    const logsDir = path.join(__dirname, 'logs');
+
+    // Create logs directory if needed
+    if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+    }
+
+    // Clean up old logs (>30 days)
+    try {
+        const files = fs.readdirSync(logsDir);
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 30);
+        let deletedCount = 0;
+
+        files.forEach(file => {
+            const match = file.match(/(\d{4}-\d{2}-\d{2})-(summary|detailed)\.log$/);
+            if (match) {
+                const fileDate = new Date(match[1]);
+                if (fileDate < cutoffDate) {
+                    fs.unlinkSync(path.join(logsDir, file));
+                    deletedCount++;
+                }
+            }
+        });
+
+        if (deletedCount > 0) {
+            console.log(`🗑️  Cleaned up ${deletedCount} log files older than 30 days`);
+        }
+    } catch (error) {
+        console.log(`⚠️  Could not cleanup old logs: ${error.message}`);
+    }
+
+    // Build summary content
+    const separator = '='.repeat(70);
+    const summaryContent = [
+        separator,
+        'DAILY PIPELINE SUMMARY',
+        `Date: ${runDate}`,
+        `Duration: ${duration} minutes`,
+        separator,
+        '',
+        '📊 PIPELINE RESULTS:',
+        `  Discovery:    ${results.discovery?.articlesInserted || 0} articles found`,
+        `  PreFilter:    ${results.prefilter?.passed || 0}/${results.prefilter?.total || 0} passed (${calcPercentage(results.prefilter?.passed, results.prefilter?.total)}%)`,
+        `  Scoring:      ${results.scoring?.scored || 0} articles scored`,
+        `  Fetch:        ${results.fetch?.fetched || 0} articles fetched`,
+        `  Enrichment:   ${results.keywords?.succeeded || 0} articles enriched`,
+        `  Cards:        ${results.cards?.cardsGenerated || 0} cards generated`,
+        results.cards?.premiumCount > 0 ? `    Premium (>=89): ${results.cards.premiumCount}` : '',
+        `  Deployed:     ${results.deploy?.success ? 'YES ✅' : 'NO ❌'}`,
+        '',
+        separator,
+        'DISCOVERY DETAILS:',
+        separator
+    ];
+
+    // Add Discovery stats if available
+    if (results.discovery?.stats) {
+        const stats = results.discovery.stats;
+        summaryContent.push(
+            `  RSS:      ${stats.sourcesSucceeded || 0} sources successful`,
+            `  Retries:  ${stats.retryStats?.totalRetries || 0} total retry attempts`
+        );
+    }
+
+    summaryContent.push(
+        '',
+        separator,
+        'NOTES:',
+        separator,
+        '- Check daily-run.log for detailed output',
+        '- Check database for article-level details',
+        '- Visit http://localhost:8080/console for web interface',
+        separator,
+        ''
+    );
+
+    // Write summary file
+    const summaryFile = path.join(logsDir, `${runDate}-summary.log`);
+    fs.writeFileSync(summaryFile, summaryContent.filter(line => line !== '').join('\n'));
+
+    console.log(`\n📄 Summary log: ${summaryFile}`);
+
+    // Auto-open summary log
+    try {
+        exec(`powershell.exe Start-Process "${summaryFile}"`, (error) => {
+            if (!error) {
+                console.log('📂 Auto-opened summary log\n');
+            }
+        });
+    } catch (error) {
+        console.log(`⚠️  Could not auto-open summary: ${error.message}\n`);
+    }
+}
+
+function calcPercentage(part, total) {
+    if (!total || total === 0) return '0.0';
+    return ((part / total) * 100).toFixed(1);
+}
 
 async function deployToGit() {
     const websitePath = path.join(__dirname, '../website');
@@ -323,6 +490,9 @@ async function openConsole() {
 }
 
 async function updateDailyRunsTable(db, runDate, results, duration) {
+    // Get UTC datetime for timestamps
+    const utcDateTime = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    
     const data = {
         run_date: runDate,
         step1_discovery_status: results.discovery ? 'completed' : 'skipped',
@@ -335,7 +505,7 @@ async function updateDailyRunsTable(db, runDate, results, duration) {
         step4_articles_processed: results.keywords?.succeeded || 0,
         step5_newsletter_status: results.cards ? 'completed' : 'skipped',
         step5_articles_processed: results.cards?.cardsGenerated || 0,
-        updated_at: new Date().toISOString()
+        updated_at: utcDateTime  // UTC timestamp
     };
     
     // Insert or update
