@@ -160,22 +160,40 @@
 
 ## LAST UPDATED
 
-**Date:** 2026-01-27 14:30 SAST
+**Date:** 2026-01-27 17:00 SAST
 **By:** Code
+**Action:** 🚨 CRITICAL: Pipeline Freeze Diagnosed - Scoring Module Broken Since Jan 20
+**Result:**
+- 🔍 DIAGNOSIS COMPLETE: Discovery working (16,854 articles found in 7 days) but scoring broken
+- ❌ PROBLEM: No articles scored since Jan 20 → No new cards → Website stale
+- 📊 BACKLOG: 16,854 unprocessed articles waiting for scoring
+- ✅ V4 Design: Fully functional (hero icons, cards, header, modals all working)
+- 📝 DOCUMENTED: Created PIPELINE-FREEZE-FIX.md with complete diagnosis
+- 🔄 TESTING: Pipeline test run in progress to identify exact failure point
+**Root Cause:**
+- Discovery ✅: 1005 articles found today (Jan 27)
+- Scoring ❌: 0 articles scored in last 14 days
+- Likely: Scoring module disabled, API credentials missing, or PreFilter blocking 100%
+**Next:**
+1. Analyze pipeline test output for error messages
+2. Check ScoringEngine.js and API credentials
+3. Fix scoring module
+4. Process 16,854 article backlog
+5. Deploy new cards to website
+
+---
+
+## PREVIOUS UPDATE (2026-01-27 14:30)
+
 **Action:** ✅ V4 Design FULLY RESTORED - Fixed All Broken Styling
 **Result:**
 - ✅ FIXED: Hero icons sizing (3rem desktop, 32px mobile, 28px small mobile with !important constraints)
 - ✅ FIXED: Article card display (switched back to styles-v2.css containing all card styling)
 - ✅ FIXED: Latest Intelligence section (uses loadDailyCards() → daily-cards.json with rich TLDR/badges/keywords)
 - ✅ FIXED: Strategic Insights section (uses loadCuratedInsights() → displayed-articles.json with curated articles)
-- ✅ V4 Header: Fixed z-index 10000, 60px height, glassmorphic design, desktop/mobile nav
-- ✅ V4 Result Popup: Centered, bordered by quadrant color, shows name/percentage/description
-- ✅ V4 Email Modal: 2 checkboxes (Advanced Assessment + Newsletter), validation, EmailOctopus ready
-- ✅ All components properly namespaced (site-header-, hero-, AssessmentFlow, HeaderMenu)
 - ✅ CSS Stack: styles-v2.css (cards) + hero.css + header-styles.css + assessment-flow.css
 - ✅ DEPLOYED: Commits 096a445 (styling fix), a769d92 (icon fix), c34b963 (V4 base)
 - ✅ LIVE: https://smartpmo.ai fully functional with V4 design + rich article cards
-**Next:** Add EmailOctopus API credentials → Monitor conversion rate
 
 **Phase 1 Achievements:**
 - Database cleaned: 23,671 → 3,834 unique articles (84% reduction)
