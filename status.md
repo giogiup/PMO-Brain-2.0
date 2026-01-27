@@ -160,23 +160,22 @@
 
 ## LAST UPDATED
 
-**Date:** 2026-01-26 03:00 SAST
+**Date:** 2026-01-27 14:30 SAST
 **By:** Code
-**Action:** ✅ V4 Design DEPLOYED TO LIVE - Header + Result Popup + Email Modal
+**Action:** ✅ V4 Design FULLY RESTORED - Fixed All Broken Styling
 **Result:**
-- ✅ Created header-styles.css (fixed header, desktop/mobile nav, CTA button)
-- ✅ Created assessment-flow.css (result popup, email modal, checkboxes)
-- ✅ Created assessment-flow.js (AssessmentFlow namespace with showResultPopup, showEmailModal, submitEmail)
-- ✅ Updated index.html: Replaced header with V4 component, added CSS links, added modals
-- ✅ Updated hero-assessment.js: Triggers result popup 500ms after assessment
-- ✅ Header: Fixed z-index 10000, 60px height, glassmorphic design
-- ✅ Result Popup: Centered, bordered by quadrant color, shows name/percentage/description
-- ✅ Email Modal: 2 checkboxes (Advanced Assessment + Newsletter), validation, EmailOctopus ready
-- ✅ Mobile Menu: Hamburger toggle with HeaderMenu namespace
+- ✅ FIXED: Hero icons sizing (3rem desktop, 32px mobile, 28px small mobile with !important constraints)
+- ✅ FIXED: Article card display (switched back to styles-v2.css containing all card styling)
+- ✅ FIXED: Latest Intelligence section (uses loadDailyCards() → daily-cards.json with rich TLDR/badges/keywords)
+- ✅ FIXED: Strategic Insights section (uses loadCuratedInsights() → displayed-articles.json with curated articles)
+- ✅ V4 Header: Fixed z-index 10000, 60px height, glassmorphic design, desktop/mobile nav
+- ✅ V4 Result Popup: Centered, bordered by quadrant color, shows name/percentage/description
+- ✅ V4 Email Modal: 2 checkboxes (Advanced Assessment + Newsletter), validation, EmailOctopus ready
 - ✅ All components properly namespaced (site-header-, hero-, AssessmentFlow, HeaderMenu)
-- ✅ DEPLOYED: Pushed to smartpmo-website repo (commit c34b963)
-- ✅ LIVE: https://smartpmo.ai now running V4 design
-**Next:** Test live site → Add EmailOctopus API credentials → Monitor conversion rate
+- ✅ CSS Stack: styles-v2.css (cards) + hero.css + header-styles.css + assessment-flow.css
+- ✅ DEPLOYED: Commits 096a445 (styling fix), a769d92 (icon fix), c34b963 (V4 base)
+- ✅ LIVE: https://smartpmo.ai fully functional with V4 design + rich article cards
+**Next:** Add EmailOctopus API credentials → Monitor conversion rate
 
 **Phase 1 Achievements:**
 - Database cleaned: 23,671 → 3,834 unique articles (84% reduction)

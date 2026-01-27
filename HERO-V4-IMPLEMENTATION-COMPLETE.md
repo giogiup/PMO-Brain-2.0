@@ -1,7 +1,7 @@
 # Hero V4 Implementation Complete
 
-**Date:** 2026-01-26
-**Status:** ✅ COMPLETE
+**Date:** 2026-01-27 (Updated after fixes)
+**Status:** ✅ COMPLETE & TESTED
 **Specification:** COMPLETE_DESIGN_SPEC_v4.md
 
 ---
@@ -13,6 +13,9 @@ Successfully implemented V4 design specifications including:
 - Centered result popup after assessment completion
 - Email capture modal with dual checkboxes
 - Complete mobile responsiveness
+- **FIXED:** Hero icon sizing (3rem/32px/28px with !important constraints)
+- **FIXED:** Article card styling (restored styles-v2.css)
+- **VERIFIED:** Rich cards with TLDR bullets, badges, keywords displaying correctly
 
 ---
 
@@ -353,4 +356,65 @@ D:\PMO-Brain-2.0-Modular\website\
 
 ---
 
+## Post-Deployment Fixes (2026-01-27)
+
+### Issue 1: Massive Hero Icons
+**Problem:** Hero quadrant icons displaying at massive sizes (bigger than screen) instead of specified dimensions.
+
+**Root Cause:** CSS specificity issues - SVG dimensions not being constrained properly by browser defaults.
+
+**Fix (Commit a769d92):**
+- Added `!important` flags to all `.hero-icon` size constraints
+- Desktop: `width: 3rem !important` + min/max constraints
+- Mobile ≤768px: `width: 32px !important` + min/max constraints
+- Small mobile ≤375px: `width: 28px !important` + min/max constraints
+- Added `display: block` to ensure proper box model
+
+**File:** `website/hero.css` lines 171-182, 665-673, 743-750
+
+### Issue 2: Broken Article Card Styling
+**Problem:** Article cards displaying as plain unstyled list with no badges, TLDR bullets, or formatting.
+
+**Root Cause:** V4 deployment switched from `styles-v2.css` to `styles-v3.css`. All article card styling (`.article-card`, `.card-title`, `.card-tldr`, badges, keywords, etc.) exists only in `styles-v2.css`.
+
+**Fix (Commit 096a445):**
+- Changed `<link rel="stylesheet" href="styles-v3.css">` back to `<link rel="stylesheet" href="styles-v2.css">`
+- Keeps V4 components: header-styles.css, hero.css, assessment-flow.css
+- Restores complete card styling system with rich display format
+
+**File:** `website/index.html` line 19
+
+### Issue 3: Article Sections Not Loading
+**Problem:** Latest Intelligence and Strategic Insights sections not displaying articles.
+
+**Root Cause:** Code was calling `loadDisplayedArticles()` which uses basic article data instead of rich card data.
+
+**Fix (Commit 57f22f6):**
+- Latest Intelligence: Uses `loadDailyCards()` → fetches `daily-cards.json` (rich data: TLDR, badges, keywords, pmo_category)
+- Strategic Insights: Uses `loadCuratedInsights()` → fetches `displayed-articles.json` (curated articles)
+- Updated `renderAutoSection()` to hide skeleton loaders and show grid
+
+**Files:** `website/index.html` lines 801-820, 1035-1036
+
+### Current CSS Stack
+```
+styles-v2.css          → Article cards, badges, TLDR, keywords, share buttons
+hero.css               → Hero section with quadrant grid and assessment
+header-styles.css      → V4 fixed header with navigation
+assessment-flow.css    → V4 result popup and email modal
+```
+
+### Data Flow
+```
+Latest Intelligence:
+  loadDailyCards() → api/daily-cards.json → renderCards() → Rich styled cards
+
+Strategic Insights:
+  loadCuratedInsights() → api/displayed-articles.json → renderCuratedSection() → Simple cards
+```
+
+---
+
 **Implementation Complete: 2026-01-26 02:45 SAST**
+**All Fixes Deployed: 2026-01-27 14:30 SAST**
+**Status: FULLY FUNCTIONAL**
