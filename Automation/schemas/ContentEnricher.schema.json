@@ -1,0 +1,66 @@
+{
+  "module": "ContentEnricher",
+  "version": "1.1.0",
+  "description": "Enriches articles with TLDR, badges, keywords, and PMO relevance analysis",
+  "input": {
+    "type": "object",
+    "required": ["article"],
+    "properties": {
+      "article": {
+        "type": "object",
+        "required": ["id", "title", "url", "full_content"],
+        "properties": {
+          "id": {"type": "number"},
+          "title": {"type": "string"},
+          "url": {"type": "string"},
+          "full_content": {"type": "string", "minLength": 100},
+          "pmo_category": {
+            "type": "string",
+            "enum": ["PMO_RELATED", "PMO_POTENTIAL", "AI_GENERAL"],
+            "description": "Category from scoring (Phase 1.4: passed to prompt)"
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["pmo_relevance", "tldr", "badges", "keywords"],
+    "properties": {
+      "pmo_relevance": {
+        "type": "string",
+        "enum": ["Direct", "Inferred", "Potential", "None"],
+        "description": "Phase 1.4: Added 'None' for AI_GENERAL articles"
+      },
+      "tldr": {
+        "type": "array",
+        "items": {"type": "string"},
+        "minItems": 1,
+        "maxItems": 5
+      },
+      "badges": {
+        "type": "object",
+        "required": ["pmo_focus", "value_type"],
+        "properties": {
+          "pmo_focus": {"type": "string"},
+          "value_type": {"type": "string"}
+        }
+      },
+      "keywords": {
+        "type": "array",
+        "items": {"type": "string"},
+        "minItems": 1,
+        "maxItems": 5
+      },
+      "read_time": {
+        "type": "number",
+        "minimum": 1
+      }
+    }
+  },
+  "errors": {
+    "PARSE_ERROR": "JSON parsing failed",
+    "VALIDATION_ERROR": "Missing required fields",
+    "API_FAILURE": "Gemini API error"
+  }
+}

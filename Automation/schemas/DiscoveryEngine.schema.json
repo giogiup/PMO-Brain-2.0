@@ -1,0 +1,76 @@
+{
+  "module": "DiscoveryEngine",
+  "version": "1.0.0",
+  "description": "Discovers articles from multiple sources (RSS, Google, GDELT, NewsAPI)",
+  "input": {
+    "type": "object",
+    "required": ["runDate"],
+    "properties": {
+      "runDate": {
+        "type": "string",
+        "format": "date",
+        "description": "Date to run discovery for (YYYY-MM-DD)"
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "name", "type"],
+          "properties": {
+            "id": {"type": "number"},
+            "name": {"type": "string"},
+            "type": {"type": "string", "enum": ["rss", "google", "gdelt", "newsapi"]},
+            "url": {"type": "string", "format": "uri"},
+            "enabled": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["stats"],
+    "properties": {
+      "stats": {
+        "type": "object",
+        "required": ["total", "inserted", "duplicatesSkipped"],
+        "properties": {
+          "total": {"type": "number", "minimum": 0},
+          "inserted": {"type": "number", "minimum": 0},
+          "duplicatesSkipped": {"type": "number", "minimum": 0},
+          "bySource": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "found": {"type": "number"},
+                "inserted": {"type": "number"},
+                "failed": {"type": "number"}
+              }
+            }
+          }
+        }
+      },
+      "articles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "title", "url"],
+          "properties": {
+            "id": {"type": "number"},
+            "title": {"type": "string"},
+            "url": {"type": "string", "format": "uri"},
+            "published_date": {"type": "string"},
+            "source_id": {"type": "number"}
+          }
+        }
+      }
+    }
+  },
+  "errors": {
+    "SOURCE_UNAVAILABLE": "Discovery source is unavailable or timed out",
+    "RATE_LIMITED": "API rate limit exceeded",
+    "PARSE_ERROR": "Could not parse source response",
+    "DATABASE_ERROR": "Failed to insert articles into database"
+  }
+}

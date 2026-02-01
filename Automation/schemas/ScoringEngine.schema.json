@@ -1,0 +1,41 @@
+{
+  "module": "ScoringEngine",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "required": ["article"],
+    "properties": {
+      "article": {
+        "type": "object",
+        "required": ["url", "title"],
+        "properties": {
+          "url": {"type": "string", "format": "uri"},
+          "title": {"type": "string", "minLength": 1},
+          "description": {"type": "string"}
+        }
+      },
+      "prompt_version": {"type": "string"}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["score", "category"],
+    "properties": {
+      "score": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "category": {
+        "type": "string",
+        "enum": ["PMO_RELATED", "PMO_POTENTIAL", "AI_GENERAL"]
+      },
+      "reasoning": {"type": "string"}
+    }
+  },
+  "errors": {
+    "API_FAILURE": "External API call failed",
+    "PARSE_ERROR": "Could not parse AI response",
+    "VALIDATION_ERROR": "Output failed schema validation"
+  }
+}

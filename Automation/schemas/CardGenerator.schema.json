@@ -1,0 +1,46 @@
+{
+  "module": "CardGenerator",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "required": ["articles"],
+    "properties": {
+      "articles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "title", "url", "pmo_score"]
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["count", "date", "cards"],
+    "properties": {
+      "count": {"type": "number", "minimum": 0, "maximum": 20},
+      "date": {"type": "string"},
+      "cards": {
+        "type": "array",
+        "maxItems": 20,
+        "items": {
+          "type": "object",
+          "required": ["id", "title", "url"],
+          "properties": {
+            "id": {"type": "number"},
+            "title": {"type": "string"},
+            "url": {"type": "string"},
+            "score": {"type": "number", "minimum": 0, "maximum": 100},
+            "tldr": {"type": "array"},
+            "badges": {"type": "object"},
+            "keywords": {"type": "array"}
+          }
+        }
+      }
+    }
+  },
+  "errors": {
+    "NO_ENRICHMENT": "No articles with enrichment data",
+    "VALIDATION_ERROR": "Card missing required fields"
+  }
+}

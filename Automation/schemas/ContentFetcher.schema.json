@@ -1,0 +1,33 @@
+{
+  "module": "ContentFetcher",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "required": ["url"],
+    "properties": {
+      "url": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["content"],
+    "properties": {
+      "content": {
+        "type": "string",
+        "minLength": 100
+      },
+      "length": {
+        "type": "number",
+        "minimum": 100
+      }
+    }
+  },
+  "errors": {
+    "TIMEOUT": "Request exceeded 30s",
+    "TOO_SHORT": "Content < 100 chars",
+    "JINA_ERROR": "Jina API error"
+  }
+}

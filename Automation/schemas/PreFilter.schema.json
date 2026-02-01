@@ -1,0 +1,83 @@
+{
+  "module": "PreFilter",
+  "version": "1.0.0",
+  "description": "Semantic prefilter using sentence transformers + BM25 scoring",
+  "input": {
+    "type": "object",
+    "required": ["articles"],
+    "properties": {
+      "articles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "title"],
+          "properties": {
+            "id": {"type": "number"},
+            "title": {"type": "string", "minLength": 1},
+            "url": {"type": "string", "format": "uri"},
+            "published_date": {"type": "string"}
+          }
+        }
+      },
+      "config": {
+        "type": "object",
+        "properties": {
+          "excellent_threshold": {"type": "number", "default": 0.35},
+          "good_threshold": {"type": "number", "default": 0.25}
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["stats", "results"],
+    "properties": {
+      "stats": {
+        "type": "object",
+        "required": ["total", "passed", "rejected"],
+        "properties": {
+          "total": {"type": "number", "minimum": 0},
+          "passed": {"type": "number", "minimum": 0},
+          "rejected": {"type": "number", "minimum": 0},
+          "passRate": {"type": "string"},
+          "avgScore": {"type": "string"},
+          "tiers": {
+            "type": "object",
+            "properties": {
+              "Excellent": {"type": "number"},
+              "Good": {"type": "number"},
+              "Reject": {"type": "number"}
+            }
+          }
+        }
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "total_score", "quality_tier"],
+          "properties": {
+            "id": {"type": "number"},
+            "title": {"type": "string"},
+            "sim_ai": {"type": "number"},
+            "sim_enterprise": {"type": "number"},
+            "sim_pmo": {"type": "number"},
+            "bm25_score": {"type": "number"},
+            "keyword_density": {"type": "number"},
+            "total_score": {"type": "number"},
+            "quality_tier": {
+              "type": "string",
+              "enum": ["Excellent", "Good", "Reject"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "errors": {
+    "PYTHON_ERROR": "Python prefilter script failed",
+    "TIMEOUT": "Prefilter processing exceeded time limit",
+    "STALL": "No progress detected for extended period",
+    "MODEL_ERROR": "Sentence transformer model failed to load"
+  }
+}

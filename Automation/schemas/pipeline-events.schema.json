@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pipeline Events Schema",
+  "description": "Schema for PMO Brain pipeline event messages",
+  "version": "1.0.0",
+
+  "definitions": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "warning", "error", "critical"]
+    },
+    "stageId": {
+      "type": "string",
+      "enum": ["discovery", "prefilter", "scoring", "fetch", "enrich", "display", "cards"]
+    },
+    "errorContext": {
+      "type": "object",
+      "properties": {
+        "articleId": { "type": ["number", "null"] },
+        "articleTitle": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "stack": { "type": ["string", "null"] }
+      }
+    }
+  },
+
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "pipeline.start" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "runId": { "type": "number" },
+            "date": { "type": "string" },
+            "mode": { "type": "string", "enum": ["auto", "manual", "test"] }
+          },
+          "required": ["date", "mode"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "stage.start" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "stage": { "$ref": "#/definitions/stageId" },
+            "total": { "type": ["number", "null"] }
+          },
+          "required": ["stage"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "stage.progress" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "stage": { "$ref": "#/definitions/stageId" },
+            "current": { "type": "number" },
+            "total": { "type": "number" },
+            "message": { "type": "string" },
+            "percent": { "type": "number", "minimum": 0, "maximum": 100 }
+          },
+          "required": ["stage", "current", "total"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "stage.complete" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "stage": { "$ref": "#/definitions/stageId" },
+            "total": { "type": "number" },
+            "successful": { "type": "number" },
+            "failed": { "type": "number" },
+            "warnings": { "type": "number" },
+            "duration": { "type": "number" }
+          },
+          "required": ["stage", "total", "successful", "failed"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "stage.error" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "stage": { "$ref": "#/definitions/stageId" },
+            "severity": { "$ref": "#/definitions/severity" },
+            "errorType": { "type": "string" },
+            "message": { "type": "string" },
+            "context": { "$ref": "#/definitions/errorContext" }
+          },
+          "required": ["stage", "severity", "message"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "stage.warning" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "stage": { "$ref": "#/definitions/stageId" },
+            "warningType": { "type": "string" },
+            "message": { "type": "string" },
+            "context": { "$ref": "#/definitions/errorContext" }
+          },
+          "required": ["stage", "message"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "pipeline.complete" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "success": { "type": "boolean" },
+            "duration": { "type": "number" },
+            "totalArticles": { "type": "number" },
+            "cardsGenerated": { "type": "number" },
+            "errors": { "type": "number" },
+            "warnings": { "type": "number" },
+            "stages": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "total": { "type": "number" },
+                  "successful": { "type": "number" },
+                  "failed": { "type": "number" },
+                  "warnings": { "type": "number" }
+                }
+              }
+            }
+          },
+          "required": ["success", "duration"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "log" },
+        "timestamp": { "$ref": "#/definitions/timestamp" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "level": { "type": "string", "enum": ["debug", "info", "warn", "error"] },
+            "message": { "type": "string" },
+            "stage": { "$ref": "#/definitions/stageId" }
+          },
+          "required": ["level", "message"]
+        }
+      },
+      "required": ["type", "timestamp", "data"]
+    }
+  ]
+}
