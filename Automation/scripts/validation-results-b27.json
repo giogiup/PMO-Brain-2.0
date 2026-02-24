@@ -1,0 +1,559 @@
+{
+  "pass": [
+    {
+      "source_name": "Data Science PM",
+      "source_url": "https://www.datascience-pm.com/feed/",
+      "tier": 1,
+      "category": "A",
+      "description": "Managing data science projects — bridging AI, Agile, PM",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Epicflow Blog",
+      "source_url": "https://www.epicflow.com/feed/",
+      "tier": 1,
+      "category": "A",
+      "description": "AI-driven multi-project resource management, predictive analytics",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Thoughtworks Insights",
+      "source_url": "https://www.thoughtworks.com/rss/insights.xml",
+      "tier": 1,
+      "category": "A",
+      "description": "Global consultancy — AI-powered software delivery, agentic AI",
+      "itemCount": 2595
+    },
+    {
+      "source_name": "Hive Blog",
+      "source_url": "https://hive.com/blog/feed/",
+      "tier": 1,
+      "category": "A",
+      "description": "PM tool with AI assistant — AI impact on PM and task automation",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Cprime Blog",
+      "source_url": "https://www.cprime.com/feed/",
+      "tier": 1,
+      "category": "A",
+      "description": "Enterprise agility — AI transformation, strategic portfolio mgmt",
+      "itemCount": 10
+    },
+    {
+      "source_name": "ITSM.tools",
+      "source_url": "https://itsm.tools/feed/",
+      "tier": 1,
+      "category": "A",
+      "description": "Independent ITSM analyst — AI in IT service management",
+      "itemCount": 15
+    },
+    {
+      "source_name": "Emergent Journal",
+      "source_url": "https://blog.emergentconsultants.com/feed/",
+      "tier": 1,
+      "category": "A",
+      "description": "AI in change management with practical ROI data",
+      "itemCount": 16
+    },
+    {
+      "source_name": "Decision Intelligence (Cassie Kozyrkov)",
+      "source_url": "https://decision.substack.com/feed",
+      "tier": 1,
+      "category": "B",
+      "description": "Former Google Chief Decision Scientist — AI-assisted judgment",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Marily's AI Product Academy",
+      "source_url": "https://marily.substack.com/feed",
+      "tier": 1,
+      "category": "B",
+      "description": "#1 AI PM resource — AI product management guides",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Almost Timely News (Christopher Penn)",
+      "source_url": "https://almosttimely.substack.com/feed",
+      "tier": 1,
+      "category": "B",
+      "description": "5P Framework for AI transformation — Purpose, People, Process",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Dion Hinchcliffe",
+      "source_url": "https://dionhinchcliffe.com/feed/",
+      "tier": 1,
+      "category": "B",
+      "description": "VP Constellation Research — enterprise digital transformation",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Exponential View (Azeem Azhar)",
+      "source_url": "https://www.exponentialview.co/feed",
+      "tier": 1,
+      "category": "B",
+      "description": "84K+ subscribers — how AI reshapes business and work",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Enterprise AI Governance (Oliver Patel)",
+      "source_url": "https://oliverpatel.substack.com/feed",
+      "tier": 1,
+      "category": "B",
+      "description": "AI governance frameworks mapping to PMO governance",
+      "itemCount": 20
+    },
+    {
+      "source_name": "AgileSparks Blog",
+      "source_url": "https://agilesparks.com/feed/",
+      "tier": 2,
+      "category": "A",
+      "description": "Agile consultancy — AI in lean-agile enterprise delivery",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Eficode Blog",
+      "source_url": "https://www.eficode.com/blog/rss.xml",
+      "tier": 2,
+      "category": "A",
+      "description": "DevOps consultancy — AI in software delivery pipelines",
+      "itemCount": 12
+    },
+    {
+      "source_name": "Hups Blog (Henrik Kniberg)",
+      "source_url": "https://hups.com/blog/rss.xml",
+      "tier": 2,
+      "category": "A",
+      "description": "Agile/Lean coach — AI impact on team collaboration",
+      "itemCount": 10
+    },
+    {
+      "source_name": "iSixSigma",
+      "source_url": "https://www.isixsigma.com/feed/",
+      "tier": 2,
+      "category": "A",
+      "description": "Six Sigma community — AI in process improvement and quality",
+      "itemCount": 50
+    },
+    {
+      "source_name": "Krisp Blog",
+      "source_url": "https://krisp.ai/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "AI noise cancellation — AI-enhanced meeting productivity",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Constellation Research Blog",
+      "source_url": "https://www.constellationr.com/rss.xml",
+      "tier": 2,
+      "category": "B",
+      "description": "Enterprise technology analyst — AI strategy for CxOs",
+      "itemCount": 10
+    },
+    {
+      "source_name": "AWS Enterprise Strategy",
+      "source_url": "https://aws.amazon.com/blogs/enterprise-strategy/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "AWS enterprise strategy — cloud AI for business transformation",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Whatfix Blog",
+      "source_url": "https://whatfix.com/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Digital adoption platform — AI-guided change management",
+      "itemCount": 12
+    },
+    {
+      "source_name": "Marketing AI Institute",
+      "source_url": "https://www.marketingaiinstitute.com/blog/rss.xml",
+      "tier": 2,
+      "category": "B",
+      "description": "AI in marketing — enterprise AI adoption patterns",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Toggl Blog",
+      "source_url": "https://toggl.com/blog/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Time tracking tool — AI in project time management",
+      "itemCount": 12
+    },
+    {
+      "source_name": "Everhour Blog",
+      "source_url": "https://everhour.com/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Time tracking — AI-enhanced project budgeting and reporting",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Document360 Blog",
+      "source_url": "https://document360.com/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Knowledge base platform — AI in documentation management",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Taskade Blog",
+      "source_url": "https://www.taskade.com/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "AI-powered task management and team collaboration",
+      "itemCount": 50
+    },
+    {
+      "source_name": "Superhuman Email Blog",
+      "source_url": "https://blog.superhuman.com/rss/",
+      "tier": 2,
+      "category": "B",
+      "description": "AI email client — AI productivity for knowledge workers",
+      "itemCount": 15
+    },
+    {
+      "source_name": "Pipefy Blog",
+      "source_url": "https://www.pipefy.com/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "BPM platform — AI in business process automation",
+      "itemCount": 10
+    },
+    {
+      "source_name": "FlowForma Blog",
+      "source_url": "https://www.flowforma.com/blog/rss.xml",
+      "tier": 2,
+      "category": "B",
+      "description": "Process automation — AI-driven workflow digitisation",
+      "itemCount": 10
+    },
+    {
+      "source_name": "Ardoq Blog",
+      "source_url": "https://www.ardoq.com/blog/rss.xml",
+      "tier": 2,
+      "category": "B",
+      "description": "Enterprise architecture platform — AI in EA decision-making",
+      "itemCount": 10
+    },
+    {
+      "source_name": "BMC Blogs",
+      "source_url": "https://www.bmc.com/blogs/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "IT service management — AI in ITSM and operations",
+      "itemCount": 10
+    },
+    {
+      "source_name": "USC Consulting Group",
+      "source_url": "https://usccg.com/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Operations consulting — AI in operational excellence",
+      "itemCount": 10
+    },
+    {
+      "source_name": "AI Tools Business",
+      "source_url": "https://aitoolsbusiness.com/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "AI tools for business — practical AI adoption guides",
+      "itemCount": 10
+    },
+    {
+      "source_name": "NoCoders",
+      "source_url": "https://nocoders.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "No-code/low-code with AI — automation without developers",
+      "itemCount": 20
+    },
+    {
+      "source_name": "GAI Insights (Paul Baier)",
+      "source_url": "https://gaiinsights.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Generative AI strategy for enterprise leaders",
+      "itemCount": 20
+    },
+    {
+      "source_name": "AI Realized Now",
+      "source_url": "https://airealizednow.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Practical AI implementation in enterprise settings",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Enterprise AI Trends (John Hwang)",
+      "source_url": "https://nextword.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Enterprise AI adoption trends and strategies",
+      "itemCount": 20
+    },
+    {
+      "source_name": "AI in Business (John Desmond)",
+      "source_url": "https://aiinbusiness.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "AI applications in business operations",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Work3 Future of Work",
+      "source_url": "https://wrk3.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Future of work — AI reshaping workplace dynamics",
+      "itemCount": 20
+    },
+    {
+      "source_name": "FullStack HR",
+      "source_url": "https://www.fullstackhr.io/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "HR tech — AI in people management and workforce planning",
+      "itemCount": 20
+    },
+    {
+      "source_name": "AI Adopters Club",
+      "source_url": "https://aiadopters.club/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Community for enterprise AI adoption practitioners",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Platforms AI BigTech (Sangeet Choudary)",
+      "source_url": "https://platforms.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Platform strategy — AI in platform business models",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Why Try AI (Daniel Nest)",
+      "source_url": "https://whytryai.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Practical AI tutorials and productivity workflows",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Geek Way (Andrew McAfee MIT)",
+      "source_url": "https://geekway.substack.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "MIT researcher — AI impact on organisations and management",
+      "itemCount": 20
+    },
+    {
+      "source_name": "The Digital Leader (John Rossman)",
+      "source_url": "https://thedigitalleader.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "Digital leadership — AI strategy for executives",
+      "itemCount": 20
+    },
+    {
+      "source_name": "The AI Leadership Edge",
+      "source_url": "https://theaileadershipedge.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI leadership insights for senior managers",
+      "itemCount": 20
+    },
+    {
+      "source_name": "AI Disruption (Meng Li)",
+      "source_url": "https://aidisruption.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI disruption patterns across industries",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Organizational AI Weekly",
+      "source_url": "https://organizationalai.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI in organisational design and management",
+      "itemCount": 15
+    },
+    {
+      "source_name": "AI Workplace Wellness",
+      "source_url": "https://aiworkplacewellness.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI impact on workplace wellbeing and culture",
+      "itemCount": 20
+    },
+    {
+      "source_name": "The Maverick Mapmaker (Jurgen Appelo)",
+      "source_url": "https://substack.jurgenappelo.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "Management 3.0 author — AI in modern management",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Honest AI",
+      "source_url": "https://honestai.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "Honest assessment of AI capabilities and limitations",
+      "itemCount": 20
+    },
+    {
+      "source_name": "The AI Optimist",
+      "source_url": "https://aioptimist.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "Optimistic AI analysis for business leaders",
+      "itemCount": 20
+    },
+    {
+      "source_name": "AI Agents Simplified",
+      "source_url": "https://aiagentssimplified.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI agents explained for business practitioners",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Level Up with AI",
+      "source_url": "https://levelupwithai.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI skill development for professionals",
+      "itemCount": 20
+    },
+    {
+      "source_name": "Wonder Tools (Jeremy Caplan)",
+      "source_url": "https://wondertools.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI tools and productivity — curated weekly recommendations",
+      "itemCount": 20
+    }
+  ],
+  "fail": [
+    {
+      "source_name": "Project Flux (James Garner)",
+      "source_url": "https://projectflux.beehiiv.com/feed",
+      "tier": 1,
+      "category": "A",
+      "description": "AI and data analytics in project delivery and project controls",
+      "reason": "HTTP 404"
+    },
+    {
+      "source_name": "Every.to",
+      "source_url": "https://every.to/feed",
+      "tier": 1,
+      "category": "B",
+      "description": "Deep AI productivity workflows — how AI changes knowledge work",
+      "reason": "HTTP 404"
+    },
+    {
+      "source_name": "Digital.ai Catalyst Blog",
+      "source_url": "https://digital.ai/feed/",
+      "tier": 2,
+      "category": "A",
+      "description": "AI-powered DevOps and agile management platform",
+      "reason": "No <item> or <entry> elements found"
+    },
+    {
+      "source_name": "tl;dv Blog",
+      "source_url": "https://tldv.io/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "AI meeting recorder — AI note-taking for project meetings",
+      "reason": "Not XML/RSS/Atom content"
+    },
+    {
+      "source_name": "IDC Blog",
+      "source_url": "https://blogs.idc.com/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Global IT research — enterprise AI adoption trends",
+      "reason": "Not XML/RSS/Atom content"
+    },
+    {
+      "source_name": "Workday Blog",
+      "source_url": "https://blog.workday.com/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Enterprise HR/finance platform — AI in workforce planning",
+      "reason": "HTTP 404"
+    },
+    {
+      "source_name": "Google Workspace Blog",
+      "source_url": "https://workspace.google.com/blog/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "Google Workspace updates — AI features for collaboration",
+      "reason": "Not XML/RSS/Atom content"
+    },
+    {
+      "source_name": "Filestage Blog",
+      "source_url": "https://filestage.io/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Review and approval platform — AI in project workflows",
+      "reason": "HTTP 404"
+    },
+    {
+      "source_name": "ABBYY Blog",
+      "source_url": "https://www.abbyy.com/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Intelligent document processing — AI in process intelligence",
+      "reason": "Not XML/RSS/Atom content"
+    },
+    {
+      "source_name": "Bizzdesign Blog",
+      "source_url": "https://bizzdesign.com/blog/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Enterprise architecture — AI-assisted transformation planning",
+      "reason": "Not XML/RSS/Atom content"
+    },
+    {
+      "source_name": "The BA Guide",
+      "source_url": "https://thebaguide.com/feed/",
+      "tier": 2,
+      "category": "B",
+      "description": "Business analysis — AI impact on BA practices",
+      "reason": "Not XML/RSS/Atom content"
+    },
+    {
+      "source_name": "AuditBoard Blog",
+      "source_url": "https://auditboard.com/blog/rss.xml",
+      "tier": 2,
+      "category": "B",
+      "description": "GRC platform — AI in audit, risk, and compliance",
+      "reason": "HTTP 404"
+    },
+    {
+      "source_name": "FutureTools Weekly",
+      "source_url": "https://www.futuretools.io/feed",
+      "tier": 2,
+      "category": "B",
+      "description": "AI tools directory — weekly AI tool discoveries",
+      "reason": "HTTP 404"
+    },
+    {
+      "source_name": "The AI Opportunity",
+      "source_url": "https://theaiopportunities.substack.com/feed",
+      "tier": 4,
+      "category": "B",
+      "description": "AI opportunities for business and career growth",
+      "reason": "HTTP 404"
+    }
+  ],
+  "timeout": []
+}
