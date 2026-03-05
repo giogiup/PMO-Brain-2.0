@@ -64,6 +64,10 @@
 
 const AIRouter = require('./AIRouter');
 const path = require('path');
+const { validateInput, validateOutput, formatErrors } = require('../lib/SchemaValidator');
+const { ExternalAPIError, ParsingError, ValidationError } = require('../lib/errors');
+const { registry: circuitBreakers } = require('../lib/CircuitBreaker');
+const { QUALITY_THRESHOLDS, TIMEOUTS, AI_PARAMS, CONTENT_TRUNCATION, BATCH_SIZES, CONTENT } = require('../config/display-thresholds');
 
 class ContentEnricher {
     constructor(db) {
@@ -82,14 +86,71 @@ class ContentEnricher {
         
         this.prompt = null; // Loaded from database at runtime
         
+        // Circuit breaker for AI API
+        this.circuitBreaker = circuitBreakers.get('ContentEnricher', {
+            threshold: 5,
+            resetTimeout: 60000
+        });
+
         this.stats = {
             attempted: 0,
             succeeded: 0,
             failed: 0,
             totalKeywords: 0
         };
+
+        // Health tracking
+        this.lastSuccess = null;
     }
-    
+
+    /**
+     * Get health status for this module
+     * CONTRACT: Section 3.1 - Module Health Interface
+     */
+    async getHealth() {
+        // Get router health
+        const routerHealth = await this.aiRouter.getHealth();
+
+        // Check pending enrichment (category-aware with quality threshold)
+        const thresholdClause = Object.entries(QUALITY_THRESHOLDS)
+            .map(([cat, min]) => `(pmo_category = '${cat}' AND quality_score >= ${min})`)
+            .join(' OR ');
+
+        const pending = await this.db.get(`
+            SELECT COUNT(*) as count FROM daily_insights
+            WHERE content_fetched = 1 AND keywords_extracted = 0
+            AND (${thresholdClause})
+        `);
+
+        const totalCalls = this.stats.succeeded + this.stats.failed;
+
+        let status = 'healthy';
+        if (routerHealth.status === 'failed' || this.circuitBreaker.isOpen()) {
+            status = 'failed';
+        } else if (this.stats.failed > this.stats.succeeded && totalCalls > 0) {
+            status = 'degraded';
+        }
+
+        return {
+            module: 'ContentEnricher',
+            status: status,
+            lastSuccess: this.lastSuccess,
+            metrics: {
+                attempted: this.stats.attempted,
+                succeeded: this.stats.succeeded,
+                failed: this.stats.failed,
+                pending: pending?.count || 0,
+                totalKeywords: this.stats.totalKeywords,
+                successRate: totalCalls > 0 ? this.stats.succeeded / totalCalls : 1
+            },
+            dependencies: [
+                { name: 'AIRouter', status: routerHealth.status },
+                { name: 'Database', status: 'healthy' },
+                { name: 'CircuitBreaker', status: this.circuitBreaker.isOpen() ? 'open' : 'closed' }
+            ]
+        };
+    }
+
     /**
      * Main execution method - enriches top-scored articles with metadata
      * 
@@ -118,7 +179,7 @@ class ContentEnricher {
      *   - If individual article fails: log, continue (don't break pipeline)
      *   - If all fail: return stats showing 0 enriched (pipeline handles)
      */
-    async run(runDate, limit = 20) {
+    async run(limit = BATCH_SIZES.enrichment) {
         console.log(`\n🎨 Enriching content for top ${limit} articles...\n`);
         
         // STEP 1: Load enrichment prompt from database
@@ -133,24 +194,36 @@ class ContentEnricher {
         }
         
         // STEP 2: Get articles to enrich
+        // Option B: Remove pmo_score gate, use category-priority + quality threshold
+        // DESIGN: DESIGN-SPEC-OPTION-B.md Section 5.3
         // QUERY LOGIC:
-        //   - published_date = runDate (only today)
         //   - content_fetched = 1 (must have full content)
         //   - full_content IS NOT NULL (validate content exists)
         //   - keywords_extracted = 0 (not enriched yet)
-        //   - ORDER BY pmo_score DESC (best articles first)
+        //   - Category + quality_score threshold (replaces pmo_score >= 70)
+        //   - ORDER BY category priority, then quality_score DESC
         //   - LIMIT (only top N articles)
-        // WHY: Can only enrich if we have full article content
+        const thresholdClause = Object.entries(QUALITY_THRESHOLDS)
+            .map(([cat, min]) => `(pmo_category = '${cat}' AND quality_score >= ${min})`)
+            .join(' OR ');
+
         const articles = await this.db.all(`
-            SELECT id, title, url, full_content, pmo_score
+            SELECT id, title, url, full_content, pmo_score, quality_score, pmo_category, discovered_at
             FROM daily_insights
-            WHERE published_date = ?
-            AND content_fetched = 1
+            WHERE content_fetched = 1
             AND full_content IS NOT NULL
             AND keywords_extracted = 0
-            ORDER BY pmo_score DESC
+            AND (${thresholdClause})
+            ORDER BY
+                CASE pmo_category
+                    WHEN 'PMO_RELATED' THEN 1
+                    WHEN 'PMO_POTENTIAL' THEN 2
+                    WHEN 'AI_GENERAL' THEN 3
+                END,
+                quality_score DESC,
+                discovered_at DESC
             LIMIT ?
-        `, [runDate, limit]);
+        `, [limit]);
         
         if (articles.length === 0) {
             console.log('⚠️  No articles need enrichment\n');
@@ -180,11 +253,8 @@ class ContentEnricher {
                     console.log(`  ❌ Failed to enrich\n`);
                 }
                 
-                // RATE LIMITING: 4 seconds between enrichment calls
-                // WHY: Enrichment uses 45K tokens/article (high token usage)
-                // GEMINI: 15 req/min = must wait 4 seconds
-                // GPT-4o-mini: Higher limits, but 4s is safe for both
-                await this.sleep(4000);
+                // RATE LIMITING: Gemini 15 req/min, configurable via central config
+                await this.sleep(TIMEOUTS.enrich_rate_ms);
                 
             } catch (error) {
                 this.stats.failed++;
@@ -256,12 +326,14 @@ class ContentEnricher {
      */
     async enrichArticle(article) {
         // Replace placeholders in prompt template
-        // PLACEHOLDERS: {title}, {url}, {content}
+        // PLACEHOLDERS: {title}, {url}, {content}, {category}
         // WHY: Prompt template is reusable across all articles
+        // Phase 1.4: Added {category} placeholder for category-aware enrichment
         let prompt = this.prompt.prompt_text
             .replace('{title}', article.title)
             .replace('{url}', article.url)
-            .replace('{content}', article.full_content.substring(0, 4000));
+            .replace('{content}', this.smartTruncate(article.full_content, CONTENT_TRUNCATION.head_chars, CONTENT_TRUNCATION.tail_chars))
+            .replace('{category}', article.pmo_category || 'AI_GENERAL');
         
         // Call AI router with waterfall failover
         // Format prompt as OpenAI-style messages array
@@ -269,7 +341,7 @@ class ContentEnricher {
             { role: 'user', content: prompt }
         ];
         
-        const result = await this.aiRouter.complete(messages, { temperature: 0.3, max_tokens: 2000 }, article.id);
+        const result = await this.aiRouter.complete(messages, AI_PARAMS.enrichment, article.id);
         const text = result?.content;
         
         if (!text) {
@@ -278,21 +350,59 @@ class ContentEnricher {
         
         try {
             // Extract JSON from response
-            // PATTERN: Matches {...} including nested objects/arrays
-            // HANDLES: Both clean JSON and markdown-wrapped (```json...```)
-            // WHY REGEX: AI responses inconsistent (sometimes wrapped)
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error('No JSON found in response');
+            // Fix 76: Robust JSON extraction — strips markdown fences before parsing
+            // ScoringEngine already had this; ContentEnricher was missing it
+            // Gemini wraps JSON in ```json...``` ~26% of the time
+            let jsonText = text;
+
+            // Step 1: Try markdown code block first (any language tag, case-insensitive)
+            const fenceMatch = text.match(/```\w*\s*(\{[\s\S]*?\})\s*```/i);
+            if (fenceMatch) {
+                jsonText = fenceMatch[1];
+            } else {
+                // Step 2: Fall back to raw JSON extraction
+                const rawMatch = text.match(/\{[\s\S]*\}/);
+                if (rawMatch) {
+                    jsonText = rawMatch[0];
+                } else {
+                    // Log first 300 chars of response for debugging
+                    console.error(`    Raw AI response (first 300 chars): ${text.substring(0, 300)}`);
+                    throw new Error('No JSON found in response');
+                }
             }
-            
-            const enrichment = JSON.parse(jsonMatch[0]);
-            
-            // Validate structure
-            // REQUIRED FIELDS: All must exist for card generation to work
-            // WHY: Partial data causes card render errors
-            if (!enrichment.tagline || !enrichment.tldr || !enrichment.badges || !enrichment.keywords) {
-                throw new Error('Invalid enrichment structure - missing required fields');
+
+            // Step 3: Clean common AI response quirks (trailing commas, control chars)
+            jsonText = jsonText
+                .replace(/,\s*}/g, '}')
+                .replace(/,\s*]/g, ']')
+                .replace(/[\x00-\x1F\x7F]/g, '');
+
+            const enrichment = JSON.parse(jsonText);
+
+            // Validate structure for v1.1 (UX overhaul)
+            // REQUIRED FIELDS: pmo_relevance, 3 tldr bullets, 2 badges, 3+ keywords
+            if (!enrichment.pmo_relevance ||
+                !enrichment.tldr ||
+                !Array.isArray(enrichment.tldr) ||
+                enrichment.tldr.length !== 3 ||
+                !enrichment.badges ||
+                !enrichment.badges.pmo_focus ||
+                !enrichment.badges.value_type ||
+                !enrichment.keywords ||
+                enrichment.keywords.length < 3) {
+                throw new Error('Invalid enrichment structure - check: pmo_relevance, 3 tldr bullets, 2 badges, 3 keywords');
+            }
+
+            // Trim keywords to 3 if model returned more
+            if (enrichment.keywords.length > 3) {
+                enrichment.keywords = enrichment.keywords.slice(0, 3);
+            }
+
+            // Validate pmo_relevance values
+            // Phase 1.4: Added "None" for AI_GENERAL category articles
+            const validRelevance = ['Direct', 'Inferred', 'Potential', 'None'];
+            if (!validRelevance.includes(enrichment.pmo_relevance)) {
+                throw new Error(`Invalid pmo_relevance: ${enrichment.pmo_relevance}. Must be: Direct, Inferred, Potential, or None`);
             }
             
             // Calculate read time from word count
@@ -300,7 +410,7 @@ class ContentEnricher {
             // ROUND UP: ceil ensures non-zero for short articles
             // USAGE: Displayed on cards ("3 min read")
             const wordCount = article.full_content.split(/\s+/).length;
-            enrichment.read_time = Math.ceil(wordCount / 200);
+            enrichment.read_time = Math.ceil(wordCount / CONTENT.reading_speed_wpm);
             
             return enrichment;
             
@@ -341,42 +451,51 @@ class ContentEnricher {
      *   Database errors logged and thrown to caller
      */
     async saveEnrichment(articleId, enrichment) {
-        // STEP 1: Save main metadata to newsletter_content table
+        // STEP 1: Save main metadata to newsletter_content table (v1.1 schema)
+        // NEW FIELDS: pmo_relevance, value_type (replaces implementation_speed, skill_level)
+        // REMOVED: tagline (removed from design)
         // ON CONFLICT: If article already enriched, update with new data
         // CRITICAL: Requires article_id UNIQUE constraint in schema
         await this.db.run(`
             INSERT INTO newsletter_content (
                 article_id,
                 newsletter_date,
-                tagline,
+                pmo_relevance,
                 tldr,
                 pmo_area,
-                implementation_speed,
-                skill_level,
+                value_type,
                 read_time,
+                implementation_speed,
                 price_info,
                 created_at,
                 updated_at
             ) VALUES (?, DATE('now'), ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT(article_id) DO UPDATE SET
-                tagline = excluded.tagline,
+                pmo_relevance = excluded.pmo_relevance,
                 tldr = excluded.tldr,
                 pmo_area = excluded.pmo_area,
-                implementation_speed = excluded.implementation_speed,
-                skill_level = excluded.skill_level,
+                value_type = excluded.value_type,
                 read_time = excluded.read_time,
+                implementation_speed = excluded.implementation_speed,
                 price_info = excluded.price_info,
                 updated_at = CURRENT_TIMESTAMP
         `, [
             articleId,
-            enrichment.tagline,
+            enrichment.pmo_relevance,
             JSON.stringify(enrichment.tldr), // Array → JSON string
-            enrichment.badges.pmo_area,
-            enrichment.badges.implementation,
-            enrichment.badges.skill_level,
+            enrichment.badges.pmo_focus,
+            enrichment.badges.value_type,
             enrichment.read_time,
-            enrichment.badges.price
+            enrichment.badges.implementation || 'Medium', // Legacy field for dynamic badge
+            enrichment.badges.price || 'Free' // Legacy field for dynamic badge
         ]);
+
+        // Also update daily_insights with pmo_relevance for quick filtering
+        await this.db.run(`
+            UPDATE daily_insights
+            SET pmo_relevance = ?
+            WHERE id = ?
+        `, [enrichment.pmo_relevance, articleId]);
         
         // STEP 2: Delete old keywords (if re-enriching)
         // WHY: Simpler than diff/update, and keywords may change
@@ -407,11 +526,31 @@ class ContentEnricher {
     }
     
     /**
+     * Smart truncate: First N chars + Last M chars
+     * Captures intro + conclusion (where PMO mentions often appear)
+     *
+     * @param {string} content - Full article content
+     * @param {number} headChars - Characters from start (default 2500)
+     * @param {number} tailChars - Characters from end (default 1500)
+     * @returns {string} Truncated content with separator
+     */
+    smartTruncate(content, headChars = CONTENT_TRUNCATION.head_chars, tailChars = CONTENT_TRUNCATION.tail_chars) {
+        if (content.length <= headChars + tailChars) {
+            return content; // Article short enough, return full
+        }
+
+        const head = content.substring(0, headChars);
+        const tail = content.substring(content.length - tailChars);
+
+        return head + "\n\n[...middle section omitted...]\n\n" + tail;
+    }
+
+    /**
      * Sleep utility for rate limiting
-     * 
+     *
      * @param {number} ms - Milliseconds to wait
      * @returns {Promise} Resolves after delay
-     * 
+     *
      * USAGE: await this.sleep(4000) // Wait 4 seconds (Gemini)
      * WHY CRITICAL FOR ENRICHMENT:
      *   - Each call uses 45K tokens (100x more than scoring)
