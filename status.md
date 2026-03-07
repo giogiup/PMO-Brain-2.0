@@ -1,24 +1,27 @@
 # PMO BRAIN 2.0 - STATUS
 
-**LAST UPDATED: 2026-02-24 SAST by Code (B-27 Blog Source Expansion)**
+**LAST UPDATED: 2026-03-07 SAST by Code (B-60 smart^AI Meta-Prompt Builder — SPEC-B60 deployed)**
 
 **Single source of truth for Chat & Code**
 
 ---
 
-## 🟢 CURRENT STATE: PIPELINE STABLE — CONSOLE CONSOLIDATED ✅
+## 🟢 CURRENT STATE: PIPELINE STABLE — PROMPT SERVICE LIVE ✅
 
-**Pipeline:** Healthy. Scoring-only run completed 2026-02-24 (8.6 min, 33/33 scored, 0 failures). Deployed to smartpmo.ai.
-**Console:** ✅ B-16 DONE — Port 3333 absorbed into port 8080 as "Pipeline Runner" tab. WebSocket live log, Run/Stop, stage progress, cards preview. Scheduler auto-opens console + browser when `--trigger=scheduler` runs (4 AM SAST). Falls back to direct run if console fails.
+**Pipeline:** Healthy. Run 180 completed 2026-02-24 (21.6 min, 434 sources, 109 discovered, 10 fetched, 10 enriched, 20 cards). Deployed to smartpmo.ai.
+**Console:** ✅ B-16 DONE + B-40/B-41/B-17/B-19/B-11/B-23 DONE — Port 8080 management console. Pipeline Runner now crash-proof (uncaughtException handlers, try/catch on broadcast/IPC/stdout). Stop button uses Windows `taskkill /T /F`. Curated Articles Manager: full edit modal (all fields), Deploy to Live button (`push-bust.ps1`). Vote seeding API (`wrangler d1 execute`). Subscriber count monitor in hero bar (EmailOctopus v2, 1hr cache, colour-coded alerts).
 **Website:** 20/20 articles displayed. Mix: 10 AI_GENERAL + 9 PMO_POTENTIAL + 1 PMO_RELATED (cap bug self-corrected on B-25 run).
 **Assessment:** ✅ B-05 LIVE — 15-question assessment at smartpmo.ai/assessment. Quadrant result + scores + copy/email. Hero redesigned to Layout B (3-band stacked narrative).
+**Prompts:** ✅ B-60 LIVE (smart^AI deployed 2026-03-07) — **SmartPMO Prompts** at smartpmo.ai/prompts. 4 tabs: smart^AI (default) | Forge (4) | Ready to Use (22) | Chains (6). **smart^AI** is a meta-prompt builder — user describes problem, ticks checkboxes across 6 authority categories (PMBOK, Grounding, Agile, PMO, AI, Research — 69 total items), live preview assembles a meta-prompt. Copy + 5 AI launchers (ChatGPT, Claude, Gemini, Copilot, Perplexity). Desktop: 2-col layout (checkboxes left, sticky preview right). Mobile: stacked. Zero API calls — pure client-side. IIFE module, scoped CSS, WCAG compliant. Prior: B-58 rename+polish, OG card, share buttons, privacy/AI disclaimers.
 **About:** ✅ B-01 LIVE — About page at smartpmo.ai/about. 8 content sections, stat callout, category cards, CTA block. Inter font throughout. Nav link on all 3 pages.
-**Newsletter:** ✅ B-02 BUILT — `Automation/newsletter/send-weekly-newsletter.js`. Top 20 articles, email-safe HTML, EmailOctopus v1.6 API, `--dry-run` tested. Before first live send: set up sender email `newsletter@smartpmo.ai` (Cloudflare Email Routing + DNS verification). Schedule: Fridays 07:45 SAST via `run-newsletter.bat`.
+**Newsletter:** ✅ B-02 LIVE — First newsletter sent 2026-02-28 to 3 subscribers via Resend.com API. From: `newsletter@smartpmo.ai` with full DKIM/SPF (smartpmo.ai verified on Resend, Cloudflare DNS records auto-created). Card design: dark theme, category badges, read time, PMO area tags, clickable titles, "Read Article →" links. All-cyan SmartPMO.ai header. EmailOctopus v2 API for subscriber list, Resend API for sending. Task Scheduler job still needed (Fridays 07:45 SAST).
+**Quarterly Report:** ✅ B-26 LIVE — EmailOctopus automation "Quarterly Report – Welcome & Download" active. Trigger: contact added to "Quarterly Report" list → sends "Your Report is Ready" email with download button. PDF at `smartpmo.ai/reports/SmartPMO-AI-Maturity-Q4-2025.pdf`. Form ID `57242e28-10e4-11f1-a1d8-1b4d501b40b6` embedded in index.html.
+**Subscription Forms:** ✅ B-32 DONE — Gradient buttons (cyan→purple, black text, visible border), success messages (green on dark bg), custom SVG icons (B-14), 400px matched sizing, mobile-responsive, duplicate guard v4 (MutationObserver-based — saves to localStorage only on confirmed EmailOctopus success, yellow "already subscribed" on re-submit). EmailOctopus welcome email refined (dark theme, no social icons).
 **SEO:** B-03 complete — full meta/OG/Twitter tags, 3× JSON-LD, sitemap.xml, robots.txt, webmanifest (2026-02-20).
 **Mobile:** Fixed (v3+Fix47) — mobile-fixes.css: single-column grid, hero bands stack, card footer visible, 32px tap targets. `share-btn` → `shr-icon` (ad blocker bypass).
 **CSS loading:** Recovered — href corruption fixed (SPEC-SITE-RECOVERY-v1). All 5 CSS files 200 OK on live site (assessment-flow.css removed).
 **Banner:** Amber maintenance banner live (dismissable). Header/body offset applied. Share buttons restored (hideVoteBar fix).
-**Votes API:** ✅ LIVE — Cloudflare Worker + D1. URL: https://smartpmo-votes.ggpera.workers.dev — /health ✅ /votes/68054 returns upvotes:2 ✅. 23 votes migrated. local VotesAPI (localhost:3334) retired.
+**Votes API:** ✅ B-33 FIXED — Race condition resolved. VotesModule now watches BOTH grids (auto + curated) via `GRID_IDS` array with dedup `Set`. Worker responses include `Cache-Control: no-store`. D1 healthy (68054=9 upvotes persisted). Worker v61f5e796 + Pages deployed. Legacy local VotesAPI (`Automation/api/votes.js`, port 3334) deleted — was retired dead code writing to local SQLite, not connected to live site.
 **Sources:** ✅ B-27 DONE — 434 enabled (was 379). 55 new RSS blogs added (validated from 69 proposed). 14 failed validation (7× 404, 7× non-XML). T1=13, T2=31, T4=11. 11 Cat-A (direct intersection), 44 Cat-B (PMO_POTENTIAL).
 **Cerebras:** Fixed — model `gpt-oss-120b` (120B reasoning model). AIProviderAdapter patched for `.reasoning` field.
 **Prompts:** v1.2 classification + v1.2 quality + v1.3 enrichment — ALL ACTIVE ✓ (B-25: text output format replaces JSON)
@@ -28,8 +31,8 @@
 ## PIPELINE FLOW
 
 ```
-Discovery (1089) → PreFilter (100) → Scoring (78 pass) → Fetch (12) →
-Enrich (10) → Cards (20) → Display (20) → Deploy (GitHub → Cloudflare)
+Discovery (552) → PreFilter (100) → Scoring (99 pass) → Fetch (21) →
+Enrich (18) → Display (20) → Cards (20) → Deploy (GitHub → Cloudflare)
 ```
 
 ---
@@ -40,7 +43,7 @@ Enrich (10) → Cards (20) → Display (20) → Deploy (GitHub → Cloudflare)
 - **Articles displayed:** 20/20
 - **Distribution:** 1 PMO_RELATED + 9 PMO_POTENTIAL + 10 AI_GENERAL
 - **AI_GENERAL cap:** ✅ Correct (10/10, within 50% cap). Self-corrected on B-25 scoring run.
-- **Last deploy:** 2026-02-24 ~07:16 UTC (B-25 scoring run, auto-deploy via GitHub push)
+- **Last deploy:** 2026-02-24 ~20:50 UTC (Run 180 post B-27 expansion, auto-deploy via GitHub push)
 - **Host:** Cloudflare Pages (auto-deploy from GitHub push to website repo)
 - **API files:** `daily-cards.json` + `displayed-articles.json` + `live-stats.json`
 
@@ -69,6 +72,7 @@ Enrich (10) → Cards (20) → Display (20) → Deploy (GitHub → Cloudflare)
 
 | Run | Date | Status | Sources | Articles | Duration |
 |-----|------|--------|---------|----------|----------|
+| 180 | 2026-02-24 | ✅ completed | 286/434 | 109 | 21.6 min |
 | 171 | 2026-02-19 | ✅ completed | 308/421 | 1,089 | 22.1 min |
 | 170 | 2026-02-17 | ❌ failed | 0/0 | 0 | — |
 | 169 | 2026-02-16 | ✅ completed | 251/274 | 219 | 21.7 min |
@@ -215,6 +219,31 @@ Configurable in `Automation/config/display-thresholds.js`
 | 57 | B-24: OpenRouter provider — Added as priority 4 scoring fallback (between fireworks and openai). `case 'openrouter':` in AIProviderAdapter.js (OpenAI-compatible, baseURL `openrouter.ai/api/v1`). DB: `ai_providers` row id=8, model `meta-llama/llama-3.3-70b-instruct:free`, 50/day free. Groq disabled (SA geo-block). `.env`: `OPENROUTER_API_KEY` added. API key verified valid (`/auth/key` → `is_free_tier:true`). Free model under upstream load at time of testing (429s) — transient, cascade handles it. | Feb 24 | ✅ Done |
 | 58 | B-16: Console consolidation — Absorbed port 3333 (pipeline runner) into port 8080 (management console). Added WebSocket + pipeline endpoints (`/api/pipeline/*`) to `01-Management-Console/public/server.js`. New `pipeline-runner-tab.js` module (ES module, fire theme, 7 stages incl. deploy). `console.html`: Pipeline Runner as first/default tab. `ws` npm dependency added. Old console renamed to `Automation/console-RETIRED/`. **Scheduler auto-console:** `run-daily-pipeline.js` `--trigger=scheduler` now spawns console server, opens browser, triggers pipeline via API (live WebSocket progress). Falls back to direct run if console fails. No Task Scheduler changes needed. Tested: server auto-start, API status 200, port detection. | Feb 24 | ✅ Done |
 | 59 | B-27: Blog Source Expansion — 55 new RSS sources added (validated from 69 proposed, 14 failed: 7× 404 + 7× non-XML). Config: `Automation/config/new-feeds-b27.json`. Validator: `Automation/scripts/validate-new-feeds.js`. SQL: `Automation/scripts/insert-b27-feeds.sql`. Tiers: T1=13, T2=31, T4=11. Categories: A=11, B=44. `added_by='spec-b27'`. Smoke test: 14 articles from 11 new sources on first discovery run. Rollback: `UPDATE source_registry SET enabled=0 WHERE added_by='spec-b27'` | Feb 24 | ✅ Done |
+| 60 | B-28: `/console` route — `app.get('/console', ...)` redirect to `/console.html` in server.js | Feb 25 | ✅ Done |
+| 61 | B-28: VPN Manager removed — commented out `require('./lib/VPNManager')` + disconnect/connect blocks in run-daily-pipeline.js + run-manual-console.js. Groq disabled (SA geo-block), VPN probes were dead code spawning PowerShell. Reversible: uncomment or `git log --all -p` | Feb 25 | ✅ Done |
+| 62 | B-28: Pipeline log persistence — server.js pipes child stdout/stderr to `Automation/pipeline-run.log` (overwritten each run). Console-mode runs now have persistent output. | Feb 25 | ✅ Done |
+| 63 | B-28: Summary log in console mode — run-manual-console.js generates `logs/{date}-summary.log` via DB query before exit. Matches format of run-daily-pipeline.js summaries. | Feb 25 | ✅ Done |
+| 64 | B-29 Item 1+2: Exit code fix + orphan elimination — deleted `runViaConsole()` (137 lines). Pipeline always runs directly via `runDailyPipeline()`. Real exit codes (0/1) flow to Task Scheduler. No more detached server.js spawning. Created `launchers/start-console-server.bat` for persistent console. | Feb 25 | ✅ Done |
+| 65 | B-29 Item 3: Discord webhook alerting — `DISCORD_WEBHOOK_URL` env var. AlertManager fires embed on success (full stats) and failure (stage, error, stack). `--test` dry-run prints payload. Backwards compat with `DISCORD_WEBHOOK`. | Feb 25 | ✅ Done |
+| 66 | B-29 Item 4: StatsGenerator fix — `newsletter_card IS NOT NULL` → `is_displayed = 1` (column didn't exist, always returned 0). Wrapped Step 6.5 in try-catch so StatsGenerator failure doesn't kill pipeline before deploy. | Feb 25 | ✅ Done |
+| 67 | B-29 Item 7: MetricsCollector error visibility — `saveToDailyRuns` catch block now logs `console.warn` + records to `metrics.errors` (was silent `console.error` only). | Feb 25 | ✅ Done |
+| 68 | B-29 Item 8: HealthCheck local date — `getPipelineHealth()` now uses local date (SAST) not UTC. Was causing false "No pipeline run today" after 10PM SAST. | Feb 25 | ✅ Done |
+| 69 | B-29 Item 9: MetricsCollector column fix — `step4_articles_enriched` → `step4_articles_processed`, `step5_cards_generated` → `step5_articles_processed`. Added 3 missing columns (`step1_duration_sec`, `step2_high_quality`, `step3_failed`) via ALTER TABLE. Enhanced schema now fires. | Feb 25 | ✅ Done |
+| 70 | B-29 Item 6: Non-fatal step failures — scoring, fetch, enrich catch blocks changed from `throw error` to `console.error` + continue. Pipeline processes existing backlog even if one step fails. Discovery/cards/display/deploy still throw on failure. | Feb 25 | ✅ Done |
+| 71 | B-29 Item 11: Smoke test — `tests/smoke-test.js` verifies DB exists, all 3 API JSON files valid, displayed articles >0, recent discovery, required .env keys. 8 checks. Run: `node tests/smoke-test.js` | Feb 25 | ✅ Done |
+| 72 | B-29 Item 13: Signal handling — server.js now handles SIGINT, SIGTERM, SIGHUP, SIGBREAK (Windows). Kills child pipeline, closes DB, 5s force-exit timeout. | Feb 25 | ✅ Done |
+| 73 | B-29 Item 17: ContentFetcher retry — single retry with 30s backoff on Crawl4AI fetch failure before marking article as failed. | Feb 25 | ✅ Done |
+| 74 | B-26: Email subscription setup — Cloudflare Email Routing (`newsletter@smartpmo.ai`), EmailOctopus DNS verification (5 records, domain verified), quarterly report automation (trigger→send email with download button), PDF hosted at `/reports/`, form ID embedded in index.html. | Feb 27 | ✅ Done |
+| 75a | Pipeline step ordering: Display before Cards — CardGenerator queries `is_displayed=1` but ran BEFORE ArticleDisplayManager set the flags. Site was always one day behind. Swapped Step 5 (Cards) ↔ Step 6 (Display) in `run-daily-pipeline.js`. | Feb 27 | ✅ Done |
+| 75b | Discord webhook missing stats — `pipelineSuccess()` call omitted `fetched`, `enriched`, `displayed`, `deployed` fields. Discord showed 0 for all four. Added 4 missing fields. | Feb 27 | ✅ Done |
+| 76 | B-14: Custom SVG icons — replaced generic emoji (📬📊) with inline SVGs using brand colours (cyan/purple sparkle envelope + bar chart with trend line). | Feb 28 | ✅ Done |
+| 77 | B-32: Subscribe button visibility — broken CSS `var(--cyan)/var(--purple)` replaced with hex colours. Added border, black text, hover effects. Both forms matched at 400px. | Feb 28 | ✅ Done |
+| 78 | B-32: Success message fix — `p:first-child { display: none }` was hiding success `<p>`. Removed. Increased CSS specificity to override EmailOctopus Bootstrap dark text. Green #4ade80 on dark bg. | Feb 28 | ✅ Done |
+| 79 | B-32: Duplicate subscription guard — client-side localStorage guard. v3: document-level capture-phase click delegation, `closest()` for mobile tap targets, marks on click. Yellow "already subscribed" message (#facc15). **⚠️ v3 was broken — see Fix 82.** | Feb 28 | ✅ Done |
+| 80 | B-32: Mobile subscription forms — full-width forms, adjusted input/button sizing in `@media (max-width: 768px)`. | Feb 28 | ✅ Done |
+| 81 | B-26: Email template polish — dark theme (#0A0A0F bg), social icons removed, sender address updated, Quarterly Report success message changed to "Your quarterly report has been sent." | Feb 28 | ✅ Done |
+| 82 | B-32: Subscription guard v4 — v3 blocked ALL submissions. Root cause: click handler saved to localStorage, then submit handler (same click) saw it as duplicate and called `preventDefault()`. Fix: removed `saveSub()` from both click and submit handlers. Added MutationObserver that saves only when EmailOctopus shows its real success message. | Feb 28 | ✅ Done |
+| 83 | B-02: Newsletter v2 API migration — EmailOctopus v1.6 campaign API dead (405), v2 API has no campaign creation endpoints. Migrated `send-weekly-newsletter.js`: subscriber/list checks → v2 API (Bearer auth, `api.emailoctopus.com`), sending → SMTP via nodemailer (Gmail). Gets contacts from v2 API, sends individually with List-Unsubscribe headers + per-subscriber unsubscribe links. Dry run verified (3 contacts, 20 articles). Needs `SMTP_USER` + `SMTP_PASS` in `.env`. | Feb 28 | ✅ Done |
 
 ---
 
@@ -222,12 +251,30 @@ Configurable in `Automation/config/display-thresholds.js`
 
 | Issue | File | Impact |
 |-------|------|--------|
-| `newsletter_card` column missing | StatsGenerator.js | Non-fatal error in Step 6.5 — stats still generate |
-| `step4_articles_enriched` column missing | MetricsCollector / daily_runs | Non-fatal error in Step 8 — metrics still save |
-| Enrichment JSON parse failures (~2-3/14) | ContentEnricher / Gemini | Intermittent — Gemini returns markdown wrapper. Non-fatal, article skipped |
-| Health check "No pipeline run today" | HealthCheck.js | Reads daily_runs table (stale schema). Run 171 not reflected correctly |
+| ~~`newsletter_card` column missing~~ | ~~StatsGenerator.js~~ | ✅ Fixed (B-29 Item 4) — now queries `is_displayed = 1` |
+| ~~`step4_articles_enriched` column missing~~ | ~~MetricsCollector / daily_runs~~ | ✅ Fixed (B-29 Item 9) — correct column names + 3 columns added |
+| ~~Enrichment JSON parse failures~~ | ~~ContentEnricher / Gemini~~ | ✅ Fixed (B-30) — markdown fence stripping ported from ScoringEngine |
+| ~~Health check "No pipeline run today"~~ | ~~HealthCheck.js~~ | ✅ Fixed (B-29 Item 8) — uses local date (SAST) not UTC |
 | Scoring: only 1 PMO_RELATED in 100 | ScoringEngine | Low PMO catch rate — diagnosed (see below). Monitor next 3-5 runs |
 | Gemini free tier: 20 calls/day limit | AIProviderAdapter / gemini | Enrichment hits 429 after ~20 calls. Falls back to openai ($0.0003/article). Non-fatal. |
+| Pipeline summary: `results.display?.displayed` wrong field | run-daily-pipeline.js line 588 | Should be `results.display?.finalCount`. Console summary always shows "0/0" for displayed. Non-fatal (log cosmetic only). |
+
+---
+
+## PIPELINE HEALTH FIXES (B-28, 2026-02-25)
+
+Investigation of 6 interlocking issues. 4 need fixes, 2 were non-issues.
+
+| # | Issue | File(s) | Fix | Status |
+|---|-------|---------|-----|--------|
+| 60 | `/console` returns 404 — no route for `/console` (only `/console.html`) | server.js | Add `app.get('/console', ...)` redirect | ✅ Done |
+| 61 | VPN Manager dead code — spawns PowerShell probes every run, Groq disabled | run-daily-pipeline.js, run-manual-console.js | Remove VPNManager import + disconnect/connect blocks | ✅ Done |
+| 62 | Pipeline output not persisted — console-mode child stdout goes nowhere on disk | server.js | Pipe child process stdout/stderr to `pipeline-run.log` | ✅ Done |
+| 63 | Summary log not generated in console mode | run-manual-console.js | DB-query summary + write to `logs/{date}-summary.log` | ✅ Done |
+| — | Task Scheduler not firing (investigated) | Task Scheduler | **Non-issue** — fires daily 6AM SAST, `schtasks` needed admin shell | ✅ |
+| — | Website not updating (investigated) | run-manual-console.js deploy step | **Non-issue** — git push working, deployed Feb 25 | ✅ |
+| — | Gemini "unsupported provider" error (investigated) | AIProviderAdapter.js | **Non-issue** — stale Jan 22 log, gemini working since Fix 16 | ✅ |
+| — | 3 stale backup DBs (86MB) | 02-discovery-engine/ | **Deleted** — pmo_insights_backup_*.db (Jan 14, 16, 22) | ✅ |
 
 ---
 
@@ -237,13 +284,15 @@ Configurable in `Automation/config/display-thresholds.js`
 
 | File | Purpose | When to use |
 |------|---------|-------------|
-| `Automation/run-daily-pipeline.js` | Production runner (B-16: `--trigger=scheduler` auto-starts console + browser) | Direct runs, scheduler, `--lookback=N` for recovery |
+| `Automation/run-daily-pipeline.js` | Production runner (B-29: runs directly, real exit codes. `--trigger=scheduler` ignored) | Direct runs, scheduler, `--lookback=N` for recovery |
 | `Automation/run-pipeline.js` | Consolidated runner (test mode, run registry) | Scheduler (via run-daily.bat) |
 | `Automation/run-manual-console.js` | Manual console-triggered run | When console server is running |
 
-### Batch files
-- `run-daily.bat` → calls `node run-pipeline.js --trigger=scheduler` (with VPN disconnect/reconnect)
-- `run-daily-NO-VPN.bat` → calls `node run-pipeline.js --trigger=scheduler >> daily-run.log 2>&1`
+### Batch files (B-29: simplified — pipeline runs directly)
+- `run-daily.bat` → opens browser, runs pipeline directly, exit code flows to Task Scheduler
+- `run-daily-NO-VPN.bat` → same as above (both identical now)
+- `launchers/start-console-server.bat` → persistent console server (register as Windows startup task)
+- **Note:** Task Scheduler should call bat file or `node run-daily-pipeline.js` directly
 
 ### Key skip flags
 ```
@@ -254,8 +303,8 @@ node run-pipeline.js --test --skip-discovery  # test mode (shadow DB, no deploy)
 
 ### Scheduler
 - **Task:** Windows Task Scheduler (`PMO-Discovery-Main`), daily 4:00 AM SAST
-- **Calls:** `cmd.exe /c cd /d Automation && node run-daily-pipeline.js --trigger=scheduler >> pipeline-output.log 2>&1`
-- **B-16 auto-console:** `--trigger=scheduler` now starts console server (port 8080), opens browser, triggers pipeline via API for live WebSocket progress. Falls back to direct run if console fails to start.
+- **Recommended action (B-29):** `cmd.exe /c D:\PMO-Brain-2.0-Modular\Automation\run-daily.bat`
+- **B-29 architecture:** Pipeline runs directly (no HTTP→spawn→poll). Real exit codes. Console server runs independently.
 
 ---
 
@@ -328,20 +377,88 @@ node run-pipeline.js --test --skip-discovery  # test mode (shadow DB, no deploy)
 | Metrics fix (§4) | SPEC-CONSOLE-UPGRADE-RECOVERY.md | Low |
 | ~~Monitor gpt-oss-120b classification quality~~ | ✅ DONE — B-25 run 33/33 success, text markers fix parsing | — |
 | ~~Monitor PMO catch rate — if <3/100 over 5 runs, add PMO+AI sources~~ | ✅ DONE — B-27 added 55 new sources (11 Cat-A intersection) | — |
+| ~~B-26: Email subscription + quarterly report automation~~ | ✅ DONE — Fix 74: Cloudflare routing + EmailOctopus verified + automation active | — |
 | Watch Section B feeds (Morning Brew, Project Smart) — 3 more runs before disabling | fix-list-2026-02-19.sql | Low |
 | B-04 Phase 2: inject vote counts into daily-cards.json at pipeline time | SPEC-B04-VOTING-BUTTONS.md §2 | Low |
 | ~~B-04: Deploy VotesAPI publicly~~ | ✅ DONE — Cloudflare Worker live, API_BASE updated | — |
-| Fix StatsGenerator `newsletter_card` column error | StatsGenerator.js | Low |
-| Fix MetricsCollector `step4_articles_enriched` error | daily_runs schema | Low |
-| Fix HealthCheck "No pipeline run today" (stale daily_runs schema) | HealthCheck.js | Low |
+| ~~Fix StatsGenerator `newsletter_card` column error~~ | ✅ DONE — B-29 Item 4 (Fix 66) | — |
+| ~~Fix MetricsCollector `step4_articles_enriched` error~~ | ✅ DONE — B-29 Item 9 (Fix 69) | — |
+| ~~Fix HealthCheck "No pipeline run today"~~ | ✅ DONE — B-29 Item 8 (Fix 68) | — |
 
 ---
 
 ## LAST UPDATED
 
-**Date:** 2026-02-24 SAST
-**By:** Chat + Code
+**Date:** 2026-02-28 SAST
+**By:** Code
 **Actions this session:**
+
+1. ✅ **Fix 82: Subscription guard blocking all submissions** — v3 duplicate guard (Fix 79) had a race condition: capture-phase click handler called `saveSub()` immediately, then the submit handler (fired by the same click) found the email already in localStorage and blocked it with `preventDefault()`. Every first-time subscription was silently killed. Fix: v4 guard removes `saveSub()` from both click and submit handlers (they only block known duplicates). A MutationObserver watches for EmailOctopus's real success message and only then saves to localStorage. Deployed via `push-bust.ps1`. Verified on live site — CAPTCHA now appears (confirms form reaches EmailOctopus).
+
+2. ✅ **Fix 83: Newsletter API migration** — Attempted first live newsletter send. Failed: EmailOctopus v1.6 campaign API returns HTTP 405 (dead). Investigated v2 API: no POST campaign endpoints exist (only GET campaigns + reports). Campaign creation removed from API entirely. **Fix:** Rewrote `send-weekly-newsletter.js`:
+   - Subscriber/list management → EmailOctopus v2 API (Bearer auth, `api.emailoctopus.com`)
+   - Email sending → SMTP via nodemailer (Gmail app password)
+   - Fetches contacts from v2 API, sends individually with `List-Unsubscribe` headers + per-subscriber EmailOctopus unsubscribe links
+   - Installed `nodemailer` npm package
+   - Dry run verified: 3 contacts fetched, 20 articles, 43.4 KB HTML
+   - **Blocking first send:** Need `SMTP_USER` + `SMTP_PASS` in `.env` (Gmail app password from https://myaccount.google.com/apppasswords)
+   - **Also found:** Task Scheduler job for newsletter was never created (script built in B-02, sender configured in B-26, but scheduler never wired)
+
+3. ✅ **Fix 85: Voting buttons fixed (B-33) — race condition in VotesModule** — Votes appeared to reset to zero and users could re-vote on the same device.
+   - **Root cause:** `VotesModule.init()` only set a MutationObserver on `auto-articles-grid` (Latest Intelligence). Strategic Insights cards (`curated-articles-grid`) rendered async after `loadAllVotes()` already fired — curated card votes never loaded. All curated buttons showed `aria-pressed="false"` (0/0), allowing "re-voting."
+   - **D1 confirmed healthy:** Live API test showed article 68054 = 9 upvotes persisted. `UNIQUE(article_id, voter_hash)` dedup working. No data loss — purely a client-side timing bug.
+   - **Fix (VotesModule):** `GRID_IDS` array replaces single `CARD_CONTAINER_ID`. Both grids get MutationObserver. `loadedArticleIds` Set prevents duplicate API calls when second grid triggers. `apiHealthy` flag caches health check result.
+   - **Fix (Worker):** Added `Cache-Control: no-store, no-cache, must-revalidate` to all responses.
+   - **Files:** `website/index.html` (VotesModule), `cloudflare-votes-worker/src/index.js`. Deployed: Worker v61f5e796 + Pages.
+
+4. ✅ **Fix 84: Newsletter live — SMTP→Resend, card redesign, spam fix** — Multiple iterations to get newsletter production-ready:
+   - **SMTP issues:** Nodemailer hung in shell environment. Built custom `smtp-send.js` using Node `tls` module (direct TLS port 465, AUTH LOGIN). Gmail app password configured.
+   - **HTML rendering fix:** Quoted-printable encoding destroyed HTML (73-char line breaks cut through CSS/tags). Switched to base64 Content-Transfer-Encoding.
+   - **First send:** 3/3 delivered via Gmail SMTP. Newsletter went to spam (no DKIM/SPF alignment — sending from `smartpmoai@gmail.com` for `smartpmo.ai` domain).
+   - **Card redesign:** Removed "Free" label, added PMO area tags, read time with clock emoji, category gradient badges, bold clickable titles, TLDR bullet points, "Read Article →" cyan links, date footer.
+   - **Header fix:** Replaced broken SVG favicon `<img>` (not rendered in email clients) with text-only logo. Made SmartPMO.ai text all-cyan (#06B6D4) per user request.
+   - **Spam fix — Resend.com:** Migrated from Gmail SMTP to Resend.com API. Domain `smartpmo.ai` verified on Resend (Cloudflare DNS auto-created: DKIM TXT record, MX for `send.smartpmo.ai`, SPF TXT for `send.smartpmo.ai`). Emails now from `newsletter@smartpmo.ai` with full DKIM/SPF/DMARC alignment. Replaced custom SMTP client with single `fetch()` call to Resend API.
+   - **Files:** `Automation/newsletter/send-weekly-newsletter.js` (Resend API integration), `Automation/newsletter/smtp-send.js` (legacy, kept as backup), `Automation/.env` (added `RESEND_API_KEY`)
+
+### Previous session (2026-02-27):
+
+1. ✅ **Fix 75: Pipeline step ordering + Discord reporting** — Investigated Discord alert showing 0 fetched/enriched/displayed despite 552 discovered. Two bugs found:
+   - **Fix 75a (step ordering):** CardGenerator (Step 5) ran BEFORE ArticleDisplayManager (Step 6). Cards queried `WHERE is_displayed = 1` and got PREVIOUS day's flags. **Site was always one day behind.** Fix: swapped Step 5↔6 in `run-daily-pipeline.js`. Display now runs first (sets `is_displayed=1`), then Cards reads fresh flags. Adheres to PMO-ENGINE-DESIGN-CONTRACT.md (no ordering constraint between these steps; Cards depends on display flags, so Display must come first).
+   - **Fix 75b (Discord stats):** `pipelineSuccess()` call only passed `discovered`, `approved`, `scored`, `cards`, `duration`. Missing: `fetched`, `enriched`, `displayed`, `deployed` — all defaulted to 0/false in `formatSuccessMessage()`. Added 4 missing fields.
+   - **Also noted:** `results.display?.displayed` (line 588) should be `results.display?.finalCount` — pre-existing cosmetic bug in console summary. Logged to Known Bugs.
+
+2. ✅ **B-26: Email Subscription Setup** — Full email infrastructure for newsletter sender and quarterly report automation.
+   - **Cloudflare Email Routing:** `newsletter@smartpmo.ai` configured to forward to `smartpmoai@gmail.com`.
+   - **EmailOctopus DNS verification:** All 5 DNS records added to Cloudflare and verified: CNAME `eo._domainkey` (DKIM), CNAME `eom` (tracking), CNAME `eot` (tracking), CNAME `60172754` (sender verification), TXT `_dmarc` (DMARC policy). Domain `smartpmo.ai` status: **Verified**.
+   - **Quarterly Report automation:** Created "Quarterly Report – Welcome & Download" automation (ID: `204c4228-134b-11f1-b22e-c797371ae8ea`). Trigger: contact added to "Quarterly Report" list (`e1762b56-10a5-11f1-b919-db8cfaf6c928`). Email: From `SmartPMO.ai <newsletter@smartpmo.ai>`, Subject "Your Report: AI Maturity in PMOs (Q4 2025)", Preview "Download your free copy of the SmartPMO quarterly report." Content: "Your Report is Ready" title, report description, blue "Download Your Report" button linking to PDF. Status: **Active** (awaiting EmailOctopus review).
+   - **PDF hosted:** `website/reports/SmartPMO-AI-Maturity-Q4-2025.pdf` (133KB, copied from source).
+   - **Website updated:** Quarterly section form ID `57242e28-10e4-11f1-a1d8-1b4d501b40b6` embedded. Status changed "Coming Soon" → "Q4 2025 Report Available".
+   - **Deployed:** Committed + pushed to `giogiup/smartpmo-website` (commit `352355b`). Live on smartpmo.ai.
+   - **Note:** Email has some remnant template sections (3-column features) below the download button — cosmetic, core functionality works. Clean up in EmailOctopus editor if desired.
+
+**Previous session (Feb 25):**
+
+1. ✅ **B-29 Phase 1: Pipeline Hardening (Items 1-4)** — Full spec: `SPEC-B29-PIPELINE-HARDENING.md` (20 items total, 5 phases). Phase 1 built:
+   - **Item 1+2 (Fix 64):** Deleted `runViaConsole()` — 137 lines of 5-process chain (spawn server detached → HTTP POST → spawn child → poll 30 min → exit(0) always). Pipeline now runs directly via `runDailyPipeline()`. Real exit codes flow to Task Scheduler. Created `launchers/start-console-server.bat` for persistent console service. Updated both bat files to simple direct-run.
+   - **Item 3 (Fix 65):** Discord webhook alerting wired. `DISCORD_WEBHOOK_URL` added to `.env` + `.env.template`. AlertManager fires success embed (all stage stats + duration) and failure embed (failed stage + error + truncated stack). `--test` flag = dry-run (prints payload, doesn't send). Backwards compat with `DISCORD_WEBHOOK`.
+   - **Item 4 (Fix 66):** StatsGenerator `newsletter_card IS NOT NULL` → `is_displayed = 1` (column never existed, query always returned 0, `live-stats.json` showed wrong card count). Wrapped Step 6.5 in try-catch so StatsGenerator failure can't kill pipeline before deploy step.
+   - **Item 7 (Fix 67):** MetricsCollector `saveToDailyRuns` catch block now logs `console.warn` + records to `metrics.errors` (was silent `console.error` only).
+   - **Item 8 (Fix 68):** HealthCheck `getPipelineHealth()` now uses local date (SAST) instead of UTC. Was causing false "No pipeline run today" alerts after 10PM SAST.
+   - **Item 9 (Fix 69):** MetricsCollector column names fixed: `step4_articles_enriched` → `step4_articles_processed`, `step5_cards_generated` → `step5_articles_processed`. Added 3 missing columns via ALTER TABLE (`step1_duration_sec`, `step2_high_quality`, `step3_failed`). Enhanced metrics schema now fires — duration and per-step detail will populate from next run.
+   - **Item 5 (assessed, deferred):** Dual SQLite driver (`sqlite3` in server.js vs `better-sqlite3` in pipeline). Separate processes — no conflict. Refactor not worth the risk.
+   - **Item 6 (Fix 70):** Non-fatal step failures. Scoring, fetch, and enrich catch blocks changed from `throw error` to `console.error` + continue. Pipeline processes existing backlog even if one step fails. Discovery still halts on failure (no articles = nothing to process). Cards/display/deploy still throw (final output).
+   - **Item 10 (deferred):** Centralise hardcoded config values. Large scope, many modules to touch. Deferred to Phase 4+.
+   - **Item 11 (Fix 71):** Smoke test. `tests/smoke-test.js` — 8 checks: DB exists, daily-cards.json, displayed-articles.json, live-stats.json, engine-status.json, displayed articles in DB, recent discovery (48h), .env required keys. 8/8 passing.
+   - **Item 12:** Resolved by Item 1 — polling loop deleted.
+   - **Item 13 (Fix 72):** Signal handling. server.js now handles SIGINT, SIGTERM, SIGHUP, SIGBREAK (Windows). Kills child pipeline, closes DB, 5s force-exit timeout.
+   - **Item 16 (assessed, kept):** engine-status.json — smoke test uses it, written by HealthCheck step, harmless. Kept.
+   - **Item 17 (Fix 73):** ContentFetcher retry. Single retry with 30s backoff on Crawl4AI failure before marking article as failed.
+   - **Item 19 (resolved):** newsletter_card column — only reference was StatsGenerator (fixed in Item 4). No other code references it. Column not needed.
+   - **Items 10, 14, 15, 18, 20 (deferred):** Config centralisation, DatabaseManager rewrite, schema validation, config versioning, pipeline event stream. Large scope / architectural. Deferred to future sprint.
+
+2. ✅ **B-28: Pipeline Health Fixes** — Investigated 6 interlocking pipeline issues. 4 required fixes, 3 were non-issues. (a) Fix 60: Added `/console` route to server.js (redirect to `/console.html`). (b) Fix 61: Removed VPNManager dead code from `run-daily-pipeline.js` + `run-manual-console.js` — Groq disabled (SA geo-block), VPN probes were spawning PowerShell every run for nothing. (c) Fix 62: Pipeline child stdout/stderr now piped to `Automation/pipeline-run.log` in server.js — console-mode runs previously had no persistent output. (d) Fix 63: Summary log generation added to `run-manual-console.js` — queries DB for actual run stats, writes `logs/{date}-summary.log`. Also deleted 3 stale backup DBs (86MB): `pmo_insights_backup_*.db` (Jan 14, 16, 22). Task Scheduler confirmed working (6AM SAST, needs admin shell to query). Website deploy confirmed working. Gemini "unsupported" error traced to stale Jan 22 log (gemini working since Fix 16).
+
+**Previous session (Feb 24):**
 
 1. ✅ **B-27: Blog Source Expansion** — Added 55 new RSS blog sources from "AI × PMO blog discovery 166" research report. Created `Automation/config/new-feeds-b27.json` (69 entries), `Automation/scripts/validate-new-feeds.js` (RSS validator with 15s timeout, redirect following, XML/Atom detection), `Automation/scripts/insert-b27-feeds.sql` (55 validated INSERTs), `Automation/scripts/run-insert-b27.js` (DB inserter with verification). Validation: 55 PASS, 14 FAIL (7× HTTP 404: Project Flux, Every.to, Workday, Filestage, AuditBoard, FutureTools, The AI Opportunity; 7× non-XML: Digital.ai, tl;dv, IDC, Google Workspace, ABBYY, Bizzdesign, The BA Guide), 0 TIMEOUT. Tier breakdown: T1=13 (8 Cat-A intersection + 5 Cat-B thought leaders), T2=31 (enterprise AI, SaaS tools, Substacks), T4=11 (niche Substacks). All tagged `added_by='spec-b27'`. Zero URL duplicates. Total enabled: 362 RSS / 434 all types (was 307 / 379). Smoke test: 14 articles from 11 new sources discovered on first run. Operations log entry added. Rollback: `UPDATE source_registry SET enabled=0 WHERE added_by='spec-b27'`.
 
